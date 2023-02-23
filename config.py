@@ -9,7 +9,8 @@ class Config:
     DEBUG = os.environ.get('DEBUG', False)
 
     # Data settings
-    DATA_FILE = os.environ.get('DATA_FILE', 'data.csv')
+    # Ajouter une variable DATA_FILE pour stocker le chemin vers le fichier Excel.
+    DATA_FILE = "data.xlsx"
     BACKUP_FOLDER = os.environ.get('BACKUP_FOLDER', '/path/to/backup/folder/')
     BACKUP_INTERVAL = os.environ.get('BACKUP_INTERVAL', 24)
     MIN_SLEEP = os.environ.get('MIN_SLEEP', 1)

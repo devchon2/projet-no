@@ -1,5 +1,5 @@
 from flask import Flask, render_template
-from config import Config
+from config import Config ,DATA_FILE
 from models import Data
 from views import home, data, stats, update
 from utils import install_missing_packages
@@ -11,6 +11,8 @@ from backup import backup_data
 from utils import load_data_from_excel, add_entry_to_excel, delete_entry_from_excel, get_entry_by_id
 from forms import AddForm, DeleteForm
 import pandas
+from flask import render_template, request, redirect, url_for
+from app import app
 
 
 app = Flask(__name__)
@@ -25,22 +27,24 @@ def load_data_from_excel():
 
 @app.route('/')
 def index():
-    # Utiliser la fonction load_data_from_excel pour obtenir les données
-    # à compléter
-    pass
+    data = load_data_from_excel(app.config['DATA_FILE'])
+    return render_template('index.html', data=data)
 
 @app.route('/add', methods=['GET', 'POST'])
 def add():
-    # Afficher un formulaire pour permettre à l'utilisateur de saisir les informations de la nouvelle entrée
-    # Ajouter cette entrée au fichier Excel
-    # à compléter
-    pass
+    form = AddForm()
+    if form.validate_on_submit():
+        entry = {
+            'id': len(load_data_from_excel(app.config['DATA_FILE'])),
+            'title': form.title.data,
+            'body': form.body.data
+        }
+        add_entry_to_excel(app.config['DATA_FILE'], entry)
+        flash('L\'entrée a été ajoutée avec succès.')
+        return redirect(url_for('index'))
+    return render_template('add.html', form=form)
 
-@app.route('/delete', methods=['GET', 'POST'])
-def delete():
-    # Afficher une page permettant à l'utilisateur de sélectionner l'entrée à supprimer et confirmer la suppression
-    # à compléter
-    pass
+
 
 @app.route('/')
 def index():
