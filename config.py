@@ -10,7 +10,8 @@ class Config:
 
     # Data settings
     # Ajouter une variable DATA_FILE pour stocker le chemin vers le fichier Excel.
-    DATA_FILE = "data.xlsx"
+    DATA_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data.xlsx')
+
     BACKUP_FOLDER = os.environ.get('BACKUP_FOLDER', '/path/to/backup/folder/')
     BACKUP_INTERVAL = os.environ.get('BACKUP_INTERVAL', 24)
     MIN_SLEEP = os.environ.get('MIN_SLEEP', 1)

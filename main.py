@@ -8,7 +8,7 @@ from data_analyzer import process_data
 from data_visualizer import generate_charts, generate_dashboards
 from data_updater import update_data
 from backup import backup_data
-from utils import load_data_from_excel, add_entry_to_excel, delete_entry_from_excel, get_entry_by_id
+from utils import add_entry_to_excel, delete_entry_from_excel, get_entry_by_id
 from forms import AddForm, DeleteForm
 import pandas
 from flask import render_template, request, redirect, url_for
@@ -16,33 +16,51 @@ from app import app
 
 
 app = Flask(__name__)
-app.config.from_object(Config)
+app.config.from_pyfile('config.py')
 
-data = Data()
 
-# Charger les données à partir du fichier Excel
 def load_data_from_excel():
-    # à compléter
-    pass
+    df = pd.read_excel(app.config['DATA_FILE'])
+    return df.to_dict(orient='records')
+
 
 @app.route('/')
 def index():
-    data = load_data_from_excel(app.config['DATA_FILE'])
-    return render_template('index.html', data=data)
+    entries = load_data_from_excel()
+    return render_template('index.html', entries=entries)
+
 
 @app.route('/add', methods=['GET', 'POST'])
 def add():
-    form = AddForm()
-    if form.validate_on_submit():
-        entry = {
-            'id': len(load_data_from_excel(app.config['DATA_FILE'])),
-            'title': form.title.data,
-            'body': form.body.data
+    form = AddForm(request.form)
+    if request.method == 'POST' and form.validate():
+        data = {
+            'id': form.id.data,
+            'name': form.name.data,
+            'description': form.description.data,
+            'image': form.image.data
         }
-        add_entry_to_excel(app.config['DATA_FILE'], entry)
-        flash('L\'entrée a été ajoutée avec succès.')
+        add_entry_to_excel(data, app.config['DATA_FILE'])
         return redirect(url_for('index'))
     return render_template('add.html', form=form)
+
+
+@app.route('/delete', methods=['GET', 'POST'])
+def delete():
+    form = DeleteForm(request.form)
+    form.entries.choices = [(entry['id'], entry['name']) for entry in load_data_from_excel()]
+    if request.method == 'POST' and form.validate():
+        entry_id = form.entries.data
+        delete_entry_from_excel(entry_id, app.config['DATA_FILE'])
+        return redirect(url_for('index'))
+    return render_template('delete.html', form=form)
+
+
+@app.route('/entry/<int:entry_id>')
+def entry(entry_id):
+    entry = get_entry_by_id(entry_id, app.config['DATA_FILE'])
+    return render_template('entry.html', entry=entry)
+
 
 
 
