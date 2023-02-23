@@ -17,3 +17,17 @@ class AddForm(FlaskForm):
     title = StringField('Titre', validators=[DataRequired()])
     body = TextAreaField('Contenu', validators=[DataRequired()])
     submit = SubmitField('Ajouter')
+
+from wtforms import Form, StringField, TextAreaField
+from wtforms.validators import InputRequired, Length
+
+
+class AddForm(Form):
+    id = StringField('ID', validators=[InputRequired(), Length(max=255)])
+    name = StringField('Name', validators=[InputRequired(), Length(max=255)])
+    description = TextAreaField('Description', validators=[InputRequired()])
+    image = StringField('Image URL', validators=[InputRequired()])
+    
+    
+class DeleteForm(Form):
+    entries = None

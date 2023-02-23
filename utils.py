@@ -30,3 +30,22 @@ def get_entry_by_id(id):
             return {'name': row[1], 'description': row[2], 'price': row[3]}
     return None
 
+import pandas as pd
+
+
+def add_entry_to_excel(data, file_path):
+    df = pd.read_excel(file_path)
+    df = df.append(data, ignore_index=True)
+    df.to_excel(file_path, index=False)
+
+
+def delete_entry_from_excel(entry_id, file_path):
+    df = pd.read_excel(file_path)
+    df = df[df['id'] != entry_id]
+    df.to_excel(file_path, index=False)
+
+
+def get_entry_by_id(entry_id, file_path):
+    df = pd.read_excel(file_path)
+    entry = df.loc[df['id'] == entry_id].to_dict(orient='records')
+    return entry[0] if entry else None
