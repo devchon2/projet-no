@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Récupération des données</title>
+</head>
+<body>
+	<h1>Récupération des données</h1>
+	<p>Les données suivantes ont été récupérées à partir des sites web :</p>
+	{{ data|safe }}
+	<p>Les données ont été sauvegardées dans un fichier CSV.</p>
+	<p>Pour continuer, veuillez cliquer sur l'un des liens ci-dessous :</p>
+	<ul>
+		<li><a href="/">Retour à l'accueil</a></li>
+		<li><a href="/stats">Voir les statistiques</a></li>
+		<li><a href="/update">Mettre à jour les données</a></li>
+	</ul>
+</body>
+</html>

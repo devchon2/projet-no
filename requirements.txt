@@ -1,0 +1,25 @@
+import os
+
+# Liste des modules à importer pour chaque fichier
+modules = {
+    'scraper.py': ['pandas', 'selenium', 'requests', 'json', 'anticaptchaofficial'],
+    'stats.py': ['pandas'],
+    'views.py': ['pandas', 'flask'],
+    'utils.py': ['pandas'],
+    'main.py': ['flask'],
+    'data_scraper.py': ['pandas', 'selenium', 'requests', 'json', 'anticaptchaofficial'],
+    'data_parser.py': ['pandas'],
+    'data_analyzer.py': ['pandas'],
+    'data_visualizer.py': ['pandas', 'matplotlib'],
+    'data_updater.py': ['pandas', 'selenium', 'requests', 'json', 'anticaptchaofficial'],
+    'dashboard.py': ['pandas', 'dash', 'dash_core_components', 'dash_html_components', 'plotly.graph_objs']
+}
+
+# Parcourt chaque fichier et ajoute l'importation des modules en début de fichier
+for filename in modules.keys():
+    with open(filename, 'r+') as f:
+        content = f.read()
+        for module in modules[filename]:
+            if module not in content:
+                f.seek(0, 0)
+                f.write("import " + module + "\n" + content)
