@@ -1,16 +1,18 @@
-def save_to_excel(data, filepath):
-    """
-    Saves the given data to an Excel file at the given filepath.
-    The data should be a list of dictionaries, where each dictionary represents a row in the Excel sheet.
+import pandas as pd
 
-    Parameters:
-    data (list): List of dictionaries, where each dictionary represents a row in the Excel sheet.
-    filepath (str): The path and filename of the Excel file to be created.
+from config import DATA_FILE
 
-    Returns:
-    None
-    """
-    import pandas as pd
+# Ajouter une nouvelle entrée au fichier Excel
+def add_entry_to_excel(data):
+    # à compléter
+    pass
 
-    df = pd.DataFrame(data)
-    df.to_excel(filepath, index=False)
+# Supprimer une entrée existante du fichier Excel
+def delete_entry_from_excel(entry_id):
+    # à compléter
+    pass
+
+# Récupérer une entrée du fichier Excel en fonction de son ID
+def get_entry_by_id(entry_id):
+    # à compléter
+    pass
