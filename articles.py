@@ -1,10 +1,10 @@
 from flask import Flask, render_template, request, jsonify
-from flask_cors import CORS
+from flask.cors import CORS
 import pandas as pd
 import numpy as np
 import joblib
 import os
-
+import config
 
 def create_article(article_data, articles_file):
     """

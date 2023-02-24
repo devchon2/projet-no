@@ -1,5 +1,6 @@
 from flask import Flask, render_template
-from config import Config , DATA_FILE
+from config import Config
+
 from models import Data
 from views import home, data, stats, update
 from utils import install_missing_packages
@@ -26,6 +27,7 @@ logging.warning('Un message d\'avertissement')
 logging.error('Un message d\'erreur')
 logging.critical('Un message critique')
 
+data_file_path = Config.DATA_FILE
 
 app = Flask(__name__)
 app.config.from_pyfile('config.py')
@@ -38,8 +40,7 @@ def load_data_from_excel():
 
 @app.route('/')
 def index():
-    entries = load_data_from_excel()
-    return render_template('index.html', entries=entries)
+    return home()
 
 
 @app.route('/add', methods=['GET', 'POST'])
@@ -74,24 +75,21 @@ def entry(entry_id):
     return render_template('entry.html', entry=entry)
 
 
-
-
-@app.route('/')
-def index():
-    return home()
-
 @app.route('/data')
 def get_data():
     return data()
+
 
 @app.route('/stats')
 def get_stats():
     return stats(data)
 
+
 @app.route('/update')
 def update_data_route():
     message = update_data(data)
     return render_template('update.html', message=message)
+
 
 if __name__ == '__main__':
     # Mettre à jour les données automatiquement tous les jours
@@ -106,11 +104,26 @@ if __name__ == '__main__':
     # Traiter les données extraites
     processed_data = process_data(auction_data)
 
+    # Générer les graphiques et les tableaux de bord pour la visualisation des données" :
+
+if __name__ == '__main__':
+    # Mettre à jour les données automatiquement tous les jours
+    update_data(data, daily=True)
+    # Installer automatiquement les paquets manquants ou obsolètes
+    install_missing_packages()
+
+    # Extraire les données des sites web d'enchères
+    auction_data = get_auction_data()
+
+    # Traiter les données extraites
+    processed_data = process_data(auction_data)
+
     # Générer les graphiques et les tableaux de bord pour la visualisation des données
     generate_charts(processed_data)
     generate_dashboards(processed_data)
 
-    # Sauvegarder les données collectées et les stocker dans un emplacement sécurisé
-    backup_data(processed_data)
+    # Sauvegarder les données dans un fichier Excel
+    backup_data(processed_data, data_file_path)
 
-    app.run(debug=True)
+    # Démarrer l'application Flask
+    app.run()

@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+
 
 class Config:
     # Flask settings
@@ -26,3 +26,6 @@ class Config:
     DB_NAME = os.environ.get('DB_NAME', 'mydatabase')
     DB_USER = os.environ.get('DB_USER', 'mydatabaseuser')
     DB_PASSWORD = os.environ.get('DB_PASSWORD', 'mypassword')
+
+
+load_dotenv()

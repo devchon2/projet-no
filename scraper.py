@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from config import config
+import config
 import random
 import data_parser
 import requests
@@ -24,6 +24,27 @@ driver = webdriver.Chrome(options=options, executable_path='chromedriver')
 api_key = 'your-key-here'
 client = AnticaptchaClient(api_key)
 solver = ImageToTextTask(client)
+
+import requests
+
+def get_html(url):
+    """Returns the HTML content of a web page.
+
+    Args:
+        url (str): The URL of the web page to scrape.
+
+    Returns:
+        str: The HTML content of the web page.
+
+    Raises:
+        Exception: If the request to the URL fails.
+    """
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.text
+    except Exception as e:
+        raise Exception(f"Failed to retrieve HTML content from {url}") from e
 
 
 def scrape_data(url, min_sleep=1, max_sleep=5):
