@@ -1,5 +1,5 @@
 from flask import Flask, render_template
-from config import Config ,DATA_FILE
+from config import Config , DATA_FILE
 from models import Data
 from views import home, data, stats, update
 from utils import install_missing_packages
@@ -10,7 +10,7 @@ from data_updater import update_data
 from backup import backup_data
 from utils import add_entry_to_excel, delete_entry_from_excel, get_entry_by_id
 from forms import AddForm, DeleteForm
-import pandas
+import pandas as pd
 from flask import render_template, request, redirect, url_for
 from app import app
 

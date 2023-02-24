@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Modifier une entrée</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <h1>Modifier une entrée</h1>
+    <form method="POST" action="{{ url_for('edit', id=entry.id) }}">
+      <!-- Ajouter les champs du formulaire pour modifier l'entrée -->
+    </form>
+  </body>
+</html>
