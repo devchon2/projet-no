@@ -1,3 +1,21 @@
 import pandas as pd  
-def view_data(data):  # Visualize data  pass 
-    return
+from flask import Blueprint, render_template
+from config import Config 
+
+views_bp = Blueprint('views_bp', __name__)
+
+@views_bp.route('/')
+def home():
+    return render_template('home.html', title='Home')
+
+@views_bp.route('/data')
+def data():
+    return render_template('data.html', title='Data')
+
+@views_bp.route('/stats')
+def stats():
+    return render_template('stats.html', title='Stats')
+
+@views_bp.route('/update')
+def update():
+    return render_template('update.html', title='Update')

@@ -1,11 +1,46 @@
 import pandas as pd
 import openpyxl
+from data_visualizer import create_dashboard
 
-from config import DATA_FILE
+from config import Config
+from config import Config
+DATA_FILE = Config.DATA_FILE
+MIN_SLEEP = Config.MIN_SLEEP
+MAX_SLEEP = Config.MAX_SLEEP
 
 
 
 ...
+import subprocess
+
+def install_missing_packages(packages):
+    """Installe automatiquement les paquets manquants.
+
+    Args:
+        packages (list): Liste des paquets à installer.
+
+    Returns:
+        int: Code de retour de la commande pip.
+    """
+    # Liste des paquets manquants
+    missing_packages = []
+    for package in packages:
+        try:
+            __import__(package)
+        except ImportError:
+            missing_packages.append(package)
+
+    # Installation des paquets manquants
+    if missing_packages:
+        print("Les paquets suivants sont manquants :")
+        print("\n".join(missing_packages))
+        print("Installation en cours...")
+
+        command = ['pip', 'install'] + missing_packages
+        return subprocess.call(command)
+    else:
+        print("Toutes les dépendances sont déjà installées.")
+        return 0
 
 def add_entry_to_excel(entry):
     wb = openpyxl.load_workbook(DATA_FILE)
