@@ -108,22 +108,17 @@ if __name__ == '__main__':
 
 if __name__ == '__main__':
     # Mettre à jour les données automatiquement tous les jours
-    update_data(data, daily=True)
+    update_data(Data(app.config['DATA_FILE_PATH'])) 
     # Installer automatiquement les paquets manquants ou obsolètes
     install_missing_packages()
-
     # Extraire les données des sites web d'enchères
     auction_data = get_auction_data()
-
     # Traiter les données extraites
     processed_data = process_data(auction_data)
-
     # Générer les graphiques et les tableaux de bord pour la visualisation des données
     generate_charts(processed_data)
     generate_dashboards(processed_data)
-
     # Sauvegarder les données dans un fichier Excel
     backup_data(processed_data, data_file_path)
-
     # Démarrer l'application Flask
     app.run()

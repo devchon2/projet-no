@@ -1,86 +1,72 @@
 import pandas as pd
-import openpyxl
-from data_visualizer import create_dashboard
+from openpyxl import load_workbook
 
-from config import Config
-from config import Config
-DATA_FILE = Config.DATA_FILE
-MIN_SLEEP = Config.MIN_SLEEP
-MAX_SLEEP = Config.MAX_SLEEP
-
-
-
-...
 import subprocess
 
-def install_missing_packages(packages):
-    """Installe automatiquement les paquets manquants.
+import boto3
+import config
+from config import Config
+
+
+def install_missing_packages():
+    """
+    Installe automatiquement les paquets manquants ou obsolètes.
+    """
+    subprocess.run(['pip', 'install', '-r', 'requirements.txt'])
+
+
+def update_data(data):
+    """
+    Met à jour les données à partir des sites web d'enchères et les sauvegarde dans un fichier Excel.
 
     Args:
-        packages (list): Liste des paquets à installer.
+        data (Data): Les données à mettre à jour.
+    """
+    # Extraire les données des sites web d'enchères
+    ebay_data = get_ebay_data()
+    amazon_data = get_amazon_data()
+
+    # Fusionner les données
+    merged_data = merge_data(amazon_data, ebay_data)
+
+    # Ajouter les nouvelles données au fichier Excel
+    for entry in merged_data:
+        existing_entry = data.df.loc[data.df['id'] == entry['id']]
+        if len(existing_entry) > 0:
+            data.df.loc[existing_entry.index[0]] = entry
+        else:
+            data.df = data.df.append(entry, ignore_index=True)
+    data.df.to_excel('data/produits.xlsx', index=False)
+
+
+def get_amazon_data():
+    """
+    Récupère les données des produits à partir de l'API Amazon Product Advertising.
 
     Returns:
-        int: Code de retour de la commande pip.
+        list: Les données des produits.
     """
-    # Liste des paquets manquants
-    missing_packages = []
-    for package in packages:
-        try:
-            __import__(package)
-        except ImportError:
-            missing_packages.append(package)
+    api_key = Config.API_KEY_AMAZON
+    api_secret = Config.API_SECRET_AMAZON
+    api_tag = Config.ASSOCIATE_TAG
 
-    # Installation des paquets manquants
-    if missing_packages:
-        print("Les paquets suivants sont manquants :")
-        print("\n".join(missing_packages))
-        print("Installation en cours...")
+    amazon_api = boto3.client('apai', region_name='us-west-2', aws_access_key_id=api_key, aws_secret_access_key=api_secret, aws_associate_tag=api_tag)
 
-        command = ['pip', 'install'] + missing_packages
-        return subprocess.call(command)
-    else:
-        print("Toutes les dépendances sont déjà installées.")
-        return 0
+   
+    keywords = 'laptop'
+    search_params = {'Keywords': keywords, 'ResponseGroup': 'ItemAttributes,Offers'}
 
-def add_entry_to_excel(entry):
-    wb = openpyxl.load_workbook(DATA_FILE)
-    sheet = wb.active
-    sheet.append([entry['name'], entry['description'], entry['price']])
-    wb.save(DATA_FILE)
+    # Appeler l'API Amazon Product Advertising pour récupérer les informations de produit
+    response = amazon_api.call('ItemSearch', **search_params)
 
-def delete_entry_from_excel(entry):
-    wb = openpyxl.load_workbook(DATA_FILE)
-    sheet = wb.active
-    for row in sheet.iter_rows(values_only=True):
-        if row[0] == entry['name'] and row[1] == entry['description'] and row[2] == entry['price']:
-            sheet.delete_rows(row[0].row)
-            break
-    wb.save(DATA_FILE)
+    # Extraire les données de la réponse
+    item = response['Items']['Item'][0]
+    title = item['ItemAttributes']['Title']
+    price = item['OfferSummary']['LowestNewPrice']['FormattedPrice']
+    url = item['DetailPageURL']
 
-def get_entry_by_id(id):
-    wb = openpyxl.load_workbook(DATA_FILE)
-    sheet = wb.active
-    for row in sheet.iter_rows(min_row=2, values_only=True):
-        if row[0] == id:
-            return {'name': row[1], 'description': row[2], 'price': row[3]}
-    return None
+    # Organiser les données dans un dictionnaire
+    data = {'id': 'A' + str(uuid.uuid4()), 'name': title, 'description': '', 'price': price, 'url': url}
 
-import pandas as pd
-
-
-def add_entry_to_excel(data, file_path):
-    df = pd.read_excel(file_path)
-    df = df.append(data, ignore_index=True)
-    df.to_excel(file_path, index=False)
-
-
-def delete_entry_from_excel(entry_id, file_path):
-    df = pd.read_excel(file_path)
-    df = df[df['id'] != entry_id]
-    df.to_excel(file_path, index=False)
-
-
-def get_entry_by_id(entry_id, file_path):
-    df = pd.read_excel(file_path)
-    entry = df.loc[df['id'] == entry_id].to_dict(orient='records')
-    return entry[0] if entry else None
+    return [data]
+    
