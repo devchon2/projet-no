@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Liste des entrées</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <h1>Liste des entrées</h1>
+    <form action="{{ url_for('index') }}" method="get">
+      <label for="search">Rechercher une entrée par son nom:</label>
+      <input type="text" id="search" name="search">
+      <input type="submit" value="Rechercher">
+    </form>
+    <table>
+      <tr>
+        <th>ID</th>
+        <th>Nom</th>
+        <th>Description</th>
+        <th>Image</th>
+        <th>Actions</th>
+      </tr>
+      {% for entry in entries %}
+        <tr>
+          <td>{{ entry.id }}</td>
+          <td>{{ entry.name }}</td>
+          <td>{{ entry.description }}</td>
+          <td>{{ entry.image }}</td>
+          <td>
+            <a href="{{ url_for('details', entry_id=entry.id) }}">Détails</a>
+            <a href="{{ url_for('edit', entry_id=entry.id) }}">Modifier</a>
+            <a href="{{ url_for('delete', entry_id=entry.id) }}">Supprimer</a>
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+    <a href="{{ url_for('add') }}">Ajouter une entrée</a>
+  </body>
+</html>

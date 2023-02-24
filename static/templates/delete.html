@@ -1,15 +1,16 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-    <title>Supprimer une entrée</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  </head>
-  <body>
-    <h1>Supprimer une entrée</h1>
-    <form method="POST" action="{{ url_for('delete') }}">
-      <!-- Ajouter les champs du formulaire pour sélectionner l'entrée à supprimer et confirmer la suppression -->
-    </form>
-  </body>
-</html>
+{% extends 'base.html' %}
 
+{% block content %}
+  <h1>Supprimer l'entrée</h1>
+  <p>Voulez-vous vraiment supprimer cette entrée ?</p>
+  <p>ID : {{ entry.id }}</p>
+  <p>Nom : {{ entry.nom }}</p>
+  <p>Description : {{ entry.description }}</p>
+  <p>Image : {{ entry.image }}</p>
+  <p>Catégorie : {{ entry.categorie }}</p>
+  <p>Prix : {{ entry.prix }} €</p>
+  <form method="POST">
+    <input type="submit" value="Oui">
+    <a href="{{ url_for('details', entry_id=entry.id) }}">Non</a>
+  </form>
+{% endblock %}

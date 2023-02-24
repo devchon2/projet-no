@@ -1,25 +1,14 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-    <title>Détails d'une entrée</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  </head>
-  <body>
-    <h1>Détails de l'entrée</h1>
-    <table>
-      <tr>
-        <td>Nom:</td>
-        <td>{{ entry.name }}</td>
-      </tr>
-      <tr>
-        <td>Description:</td>
-        <td>{{ entry.description }}</td>
-      </tr>
-      <tr>
-        <td>Image:</td>
-        <td>{{ entry.image }}</td>
-      </tr>
-    </table>
-  </body>
-</html>
+{% extends 'base.html' %}
+
+{% block content %}
+  <h1>Details de l'entrée</h1>
+  <p>ID : {{ entry.id }}</p>
+  <p>Nom : {{ entry.nom }}</p>
+  <p>Description : {{ entry.description }}</p>
+  <p>Image : {{ entry.image }}</p>
+  <p>Catégorie : {{ entry.categorie }}</p>
+  <p>Prix : {{ entry.prix }} €</p>
+  <a href="{{ url_for('index') }}">Retour à la liste des entrées</a>
+  <a href="{{ url_for('edit', entry_id=entry.id) }}">Modifier</a>
+  <a href="{{ url_for('delete', entry_id=entry.id) }}">Supprimer</a>
+{% endblock %}
