@@ -6,7 +6,9 @@ from data_visualizer import create_dashboard
 from utils import save_data_to_file
 
 # Définition de l'URL pour scraper les données
-DATA_URL = 'https://example.com'
+# Lire l'URL à scraper à partir du fichier sites.txt
+with open('data\input\sites.txt', 'r') as file:
+    DATA_URL = file.readline().strip()
 
 # Définition de l'intervalle de mise à jour automatique (en heures)
 UPDATE_INTERVAL = 24

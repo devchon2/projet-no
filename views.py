@@ -1,6 +1,6 @@
-import pandas as pd  
+import pandas as pd
 from flask import Blueprint, render_template
-from config import Config 
+from config import Config
 
 views_bp = Blueprint('views_bp', __name__)
 

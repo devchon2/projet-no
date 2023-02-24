@@ -27,5 +27,10 @@ class Config:
     DB_USER = os.environ.get('DB_USER', 'mydatabaseuser')
     DB_PASSWORD = os.environ.get('DB_PASSWORD', 'mypassword')
 
+    API_KEY_AMAZON = 'your_amazon_api_key'
+    API_SECRET_AMAZON = 'your_amazon_api_secret'
+    ASSOCIATE_TAG = 'your_amazon_associate_tag'
 
+    API_KEY_EBAY = 'YOUR_EBAY_KEY'
+    
 load_dotenv()
