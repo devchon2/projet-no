@@ -14,6 +14,18 @@ import pandas as pd
 from flask import render_template, request, redirect, url_for
 from app import app
 
+import logging
+
+# Configuration du logger
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Exemple d'utilisation
+logging.debug('Un message de debug')
+logging.info('Un message d\'info')
+logging.warning('Un message d\'avertissement')
+logging.error('Un message d\'erreur')
+logging.critical('Un message critique')
+
 
 app = Flask(__name__)
 app.config.from_pyfile('config.py')
