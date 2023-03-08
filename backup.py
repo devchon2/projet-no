@@ -3,8 +3,14 @@ import pandas as pd
 from datetime import datetime
 import openpyxl
 
+import logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
+
+
 # Définition du dossier de sauvegarde
 BACKUP_DIR = '/path/to/backup/folder/'
+
 
 def backup_data(data):
     """
@@ -12,7 +18,8 @@ def backup_data(data):
     Le nom du fichier est généré en fonction de la date et de l'heure courante.
     """
     # Générer le nom de fichier basé sur la date et l'heure actuelles
-    filename = 'data_backup_{}.xlsx'.format(datetime.now().strftime('%Y%m%d_%H%M%S'))
+    filename = 'data_backup_{}.xlsx'.format(
+        datetime.now().strftime('%Y%m%d_%H%M%S'))
 
     # Créer un DataFrame Pandas à partir des données
     df = pd.DataFrame(data)

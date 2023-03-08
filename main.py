@@ -1,8 +1,7 @@
-from flask import Flask, render_template
-from config import Config , DATA_FILE
+from config import DATA_FILE
 from models import Data
 from views import home, data, stats, update
-from utils import install_missing_packages
+from install_package import install_missing_packages
 from data_scraper import get_auction_data
 from data_analyzer import process_data
 from data_visualizer import generate_charts, generate_dashboards
@@ -11,20 +10,15 @@ from backup import backup_data
 from utils import add_entry_to_excel, delete_entry_from_excel, get_entry_by_id
 from forms import AddForm, DeleteForm
 import pandas as pd
-from flask import render_template, request, redirect, url_for
-from app import app
+from flask import Flask, render_template, request, redirect, url_for
+
 
 import logging
 
 # Configuration du logger
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Exemple d'utilisation
-logging.debug('Un message de debug')
-logging.info('Un message d\'info')
-logging.warning('Un message d\'avertissement')
-logging.error('Un message d\'erreur')
-logging.critical('Un message critique')
+
 
 
 app = Flask(__name__)
@@ -32,12 +26,15 @@ app.config.from_pyfile('config.py')
 
 
 def load_data_from_excel():
-    df = pd.read_excel(app.config['DATA_FILE'])
+    df = pd.read_excel(app.config[DATA_FILE])
     return df.to_dict(orient='records')
 
-
 @app.route('/')
-def index():
+def root():
+    return redirect(url_for('home'))
+
+@app.route('/home')
+def home():
     entries = load_data_from_excel()
     return render_template('index.html', entries=entries)
 
@@ -52,8 +49,8 @@ def add():
             'description': form.description.data,
             'image': form.image.data
         }
-        add_entry_to_excel(data, app.config['DATA_FILE'])
-        return redirect(url_for('index'))
+        add_entry_to_excel(data, app.config[DATA_FILE])
+        return redirect(url_for('home'))
     return render_template('add.html', form=form)
 
 
@@ -63,8 +60,8 @@ def delete():
     form.entries.choices = [(entry['id'], entry['name']) for entry in load_data_from_excel()]
     if request.method == 'POST' and form.validate():
         entry_id = form.entries.data
-        delete_entry_from_excel(entry_id, app.config['DATA_FILE'])
-        return redirect(url_for('index'))
+        delete_entry_from_excel(entry_id, app.config[DATA_FILE])
+        return redirect(url_for('home'))
     return render_template('delete.html', form=form)
 
 
@@ -74,28 +71,25 @@ def entry(entry_id):
     return render_template('entry.html', entry=entry)
 
 
-
-
-@app.route('/')
-def index():
-    return home()
-
 @app.route('/data')
 def get_data():
     return data()
+
 
 @app.route('/stats')
 def get_stats():
     return stats(data)
 
+
 @app.route('/update')
 def update_data_route():
-    message = update_data(data)
+    message = update_data()
     return render_template('update.html', message=message)
+
 
 if __name__ == '__main__':
     # Mettre à jour les données automatiquement tous les jours
-    update_data(data, daily=True)
+    update_data()
 
     # Installer automatiquement les paquets manquants ou obsolètes
     install_missing_packages()

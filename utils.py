@@ -1,12 +1,22 @@
 import pandas as pd
 import openpyxl
-
+import subprocess
 from config import DATA_FILE
+import sys
+import logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-
-...
-
+def save_data(data, file_name):
+    # Convertir les données en pandas DataFrame
+    df = pd.DataFrame(data)
+    
+    # Écrire le DataFrame dans un fichier Excel
+    writer = pd.ExcelWriter(file_name)
+    df.to_excel(writer, index=False)
+    writer.save()
+    
+    print(f"Les données ont été enregistrées dans le fichier {file_name}")
 def add_entry_to_excel(entry):
     wb = openpyxl.load_workbook(DATA_FILE)
     sheet = wb.active
@@ -49,3 +59,17 @@ def get_entry_by_id(entry_id, file_path):
     df = pd.read_excel(file_path)
     entry = df.loc[df['id'] == entry_id].to_dict(orient='records')
     return entry[0] if entry else None
+
+def check_package(package_name):
+    try:
+        # Vérification si le package est déjà installé
+        subprocess.check_call([sys.executable, "-c", f"import {package_name}"])
+        print(f"{package_name} est déjà installé.")
+    except subprocess.CalledProcessError:
+        # Installation du package s'il n'est pas installé
+        subprocess.check_call([sys.executable, "-m", "pip", "install", package_name])
+        print(f"{package_name} a été installé.")
+    else:
+        # Mise à jour du package s'il est déjà installé
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", package_name])
+        print(f"{package_name} a été mis à jour.")

@@ -87,7 +87,8 @@ def backup_data(data):
     Le nom du fichier est généré en fonction de la date et de l'heure courante.
     """
     # Générer le nom de fichier basé sur la date et l'heure actuelles
-    filename = 'data_backup_{}.xlsx'.format(datetime.now().strftime('%Y%m%d_%H%M%S'))
+    filename = 'data_backup_{}.xlsx'.format(
+        datetime.now().strftime('%Y%m%d_%H%M%S'))
     # Créer un DataFrame Pandas à partir des données
     df = pd.DataFrame(data)
     # Sauvegarder les données dans un fichier Excel
@@ -102,28 +103,21 @@ def backup_data(data):
     writer.save()
 config.py
 import os
-from dotenv import load_dotenv
-load_dotenv()
-class Config:
-    # Flask settings
-    SECRET_KEY = os.environ.get('SECRET_KEY')
-    DEBUG = os.environ.get('DEBUG', False)
-    # Data settings
-    # Ajouter une variable DATA_FILE pour stocker le chemin vers le fichier Excel.
-    DATA_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data.xlsx')
-    BACKUP_FOLDER = os.environ.get('BACKUP_FOLDER', '/path/to/backup/folder/')
-    BACKUP_INTERVAL = os.environ.get('BACKUP_INTERVAL', 24)
-    MIN_SLEEP = os.environ.get('MIN_SLEEP', 1)
-    MAX_SLEEP = os.environ.get('MAX_SLEEP', 5)
-    # Scraper settings
-    API_KEY = os.environ.get('API_KEY', 'your_api_key_here')
-    # Database settings
-    DB_HOST = os.environ.get('DB_HOST', 'localhost')
-    DB_PORT = os.environ.get('DB_PORT', '5432')
-    DB_NAME = os.environ.get('DB_NAME', 'mydatabase')
-    DB_USER = os.environ.get('DB_USER', 'mydatabaseuser')
-    DB_PASSWORD = os.environ.get('DB_PASSWORD', 'mypassword')
-dashboard.py
+# Flask settings
+SECRET_KEY = os.environ.get('SECRET_KEY')
+DEBUG = os.environ.get('DEBUG', False)# Data settings
+# Ajouter une variable DATA_FILE pour stocker le chemin vers le fichier Excel.
+DATA_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data.xlsx')
+BACKUP_FOLDER = os.environ.get('BACKUP_FOLDER', '/path/to/backup/folder/')
+BACKUP_INTERVAL = os.environ.get('BACKUP_INTERVAL', 24)
+MIN_SLEEP = os.environ.get('MIN_SLEEP', 1)
+MAX_SLEEP = os.environ.get('MAX_SLEEP', 5)# Scraper settings
+API_KEY = os.environ.get('API_KEY', 'your_api_key_here')# Database settings
+DB_HOST = os.environ.get('DB_HOST', 'localhost')
+DB_PORT = os.environ.get('DB_PORT', '5432')
+DB_NAME = os.environ.get('DB_NAME', 'mydatabase')
+DB_USER = os.environ.get('DB_USER', 'mydatabaseuser')
+DB_PASSWORD = os.environ.get('DB_PASSWORD', 'mypassword')dashboard.py
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -149,34 +143,89 @@ def create_dashboard(data):
     app.run_server(debug=True)
 data_analyzer.py
 import pandas as pd
-def analyze_data(data, calculate_statistics):
-    stats = calculate_statistics(data)
-    # code to analyze data and calculate statistics using Pandas
-    # ...
-    # return statistics as a Pandas DataFrame
-    stats_df = pd.DataFrame(...)
-    return stats_df
-def calculate_statistics(data):
-    # code to calculate statistics using Pandas
-    # ...
-    # return statistics as a Pandas DataFrame
-    stats_df = pd.DataFrame(...)
-    return stats_df
+import numpy as np
+import matplotlib.pyplot as plt
+def process_data(file_path):
+    # Lire les données à partir du fichier CSV
+    data = pd.read_csv(file_path)
+    # Supprimer les colonnes inutiles
+    data = data.drop(['id', 'Unnamed: 32'], axis=1)
+    # Remplacer les valeurs manquantes par la moyenne de la colonne
+    data = data.fillna(data.mean())
+    # Convertir la colonne de classification en valeurs numériques
+    data['diagnosis'] = data['diagnosis'].map({'M': 1, 'B': 0})
+    # Séparer les données de classification des autres données
+    y = data['diagnosis']
+    X = data.drop('diagnosis', axis=1)
+    # Normaliser les données en utilisant la moyenne et l'écart-type
+    X = (X - X.mean()) / X.std()
+    return X, y
+def generate_statistics(X, y):
+    # Générer des statistiques sur les données
+    num_instances, num_features = X.shape
+    num_benign = np.sum(y == 0)
+    num_malignant = np.sum(y == 1)
+    print(f"Nombre total d\'instances : {num_instances}")
+    print(f'Nombre total de fonctionnalités : {num_features}')
+    print(f'Nombre de cas bénins : {num_benign}')
+    print(f'Nombre de cas malins : {num_malignant}')
+def generate_visualizations(X, y):
+    # Générer des graphiques pour visualiser les données
+    num_instances, num_features = X.shape
+    num_benign = np.sum(y == 0)
+    num_malignant = np.sum(y == 1)
+    fig, axs = plt.subplots(1, 2, figsize=(10, 5))
+    axs[0].pie([num_benign, num_malignant], labels=['Bénin', 'Malin'], autopct='%1.1f%%', startangle=90)
+    axs[0].axis('equal')
+    axs[0].set_title('Répartition des cas bénins et malins')
+    axs[1].scatter(X.iloc[:, 0], X.iloc[:, 1], c=y, cmap=plt.cm.coolwarm)
+    axs[1].set_xlabel('Radius Mean')
+    axs[1].set_ylabel('Texture Mean')
+    axs[1].set_title('Répartition des cas bénins et malins selon les fonctionnalités Radius Mean et Texture Mean')
+    plt.show()
 data_parser.py
 from bs4 import BeautifulSoup
 import pandas as pd
 def parse_data(raw_data):
     soup = BeautifulSoup(raw_data, 'html.parser')
-    # code to extract data from html using BeautifulSoup
-    # ...
-    # return data as a Pandas DataFrame
-    data = pd.DataFrame(...)
-    return data
+    # find all divs with class 'item'
+    items = soup.find_all('div', class_='item')
+    # create empty lists to store extracted data
+    titles = []
+    prices = []
+    descriptions = []
+    # iterate over items and extract data
+    for item in items:
+        title = item.find('h2').text.strip()
+        price = item.find('span', class_='price').text.strip()
+        description = item.find('p', class_='description').text.strip()
+        titles.append(title)
+        prices.append(price)
+        descriptions.append(description)
+    return pd.DataFrame(
+        {'title': titles, 'price': prices, 'description': descriptions}
+    )
 data_scraper.py
 from selenium import webdriver
 from time import sleep
 from scraper import get_html
 from data_parser import parse_data
+from scraper import get_html
+from bs4 import BeautifulSoup
+def get_auction_data():
+    # lire les urls à partir du fichier sites.url
+    with open('sites.url', 'r') as f:
+        urls = f.readlines()
+    urls = [url.strip() for url in urls]  # supprimer les caractères de saut de ligne
+    # initialiser la liste pour stocker les données de toutes les enchères
+    auction_data = []
+    # boucle sur les urls et scraper les données
+    for url in urls:
+        data = get_html(url)
+        # extraire les données de l'enchère à partir du html
+        # ajouter les données à la liste d'enchères
+        auction_data.append(data)
+    return auction_data
 def scrape_data(url):
     # Set up Selenium webdriver
     options = webdriver.ChromeOptions()
@@ -201,7 +250,9 @@ from data_parser import parse_data
 from data_visualizer import create_dashboard
 from utils import save_data_to_file
 # Définition de l'URL pour scraper les données
-DATA_URL = 'https://example.com'
+# Lire l'URL à scraper à partir du fichier sites.txt
+with open('data\input\sites.txt', 'r') as file:
+    DATA_URL = file.readline().strip()
 # Définition de l'intervalle de mise à jour automatique (en heures)
 UPDATE_INTERVAL = 24
 # Initialisation des données
@@ -229,12 +280,80 @@ scheduler.add_job(update_data, 'interval', hours=UPDATE_INTERVAL)
 if __name__ == '__main__':
     scheduler.start()
 data_visualizer.py
+import pandas as pd
 import matplotlib.pyplot as plt
-def view_data(data):
-    # code to visualize data using Matplotlib
-    # ...
-    # show the plot
-    plt.show()
+import seaborn as sns
+import plotly.express as px
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
+def generate_charts(data):
+    """
+    Génère des graphiques à partir des données.
+    :param data: Le DataFrame contenant les données à visualiser.
+    :return: None
+    """
+    # Générer un histogramme pour visualiser la distribution des montants
+    plt.figure(figsize=(8, 6))
+    sns.histplot(data=data, x='Amount', kde=True, bins=20)
+    plt.title('Distribution des montants')
+    plt.savefig('montants.png', dpi=300)
+    plt.close()
+    # Générer un graphique à barres pour visualiser le nombre de transactions par type de carte
+    plt.figure(figsize=(8, 6))
+    sns.countplot(data=data, x='Card Type')
+    plt.title('Nombre de transactions par type de carte')
+    plt.savefig('type_de_carte.png', dpi=300)
+    plt.close()
+    # Générer un diagramme circulaire pour visualiser la répartition des transactions par pays
+    data_by_country = data.groupby(['Country'])['Amount'].sum().reset_index()
+    data_by_country = data_by_country.sort_values(by='Amount', ascending=False).head(10)
+    fig = px.pie(data_by_country, values='Amount', names='Country')
+    fig.update_traces(textposition='inside', textinfo='percent+label')
+    fig.update_layout(title='Répartition des transactions par pays (Top 10)')
+    fig.write_image('transactions_par_pays.png', engine='kaleido')
+    plt.close()
+def generate_dashboards(data):
+    """
+    Génère des tableaux de bord interactifs à partir des données.
+    :param data: Le DataFrame contenant les données à visualiser.
+    :return: L'objet Dash qui contient les tableaux de bord.
+    """
+    # Créer l'application Dash
+    app = dash.Dash(__name__)
+    # Créer une mise en page simple
+    app.layout = html.Div([
+        html.H1('Visualisation des données de transactions'),
+        dcc.Graph(
+            id='montants-histogram',
+            figure={
+                'data': [{
+                    'x': data['Amount'],
+                    'type': 'histogram'
+                }],
+                'layout': {
+                    'title': 'Distribution des montants'
+                }
+            }
+        ),
+        dcc.Graph(
+            id='type-de-carte-bar',
+            figure={
+                'data': [{
+                    'x': data['Card Type'],
+                    'type': 'histogram'
+                }],
+                'layout': {
+                    'title': 'Nombre de transactions par type de carte'
+                }
+            }
+        ),
+        dcc.Graph(
+            id='transactions-par-pays-pie',
+            figure=px.pie(data.groupby(['Country'])['Amount'].sum().reset_index().sort_values(by='Amount', ascending=False).head(10), values='Amount', names='Country', title='Répartition des transactions par pays (Top 10)')
+        )
+    ])
+    return app
 deployment.py
 mkdir my_app && cd my_app && touch scraper.py stats.py views.py utils.py main.py data_scraper.py data_parser.py data_analyzer.py data_visualizer.py data_updater.py dashboard.py sites.txt && echo -e "import pandas as pd\nimport requests\nimport json\nimport time\nimport selenium.webdriver as webdriver\nfrom bs4 import BeautifulSoup\nfrom utils import check_package, save_data\n\nif check_package('anticaptchaofficial'):\n import anticaptchaofficial\n\n\ndef scrape_data(url):\n driver = webdriver.Chrome()\n if 'google.com/recaptcha/' in url:\n captcha_text = solve_captcha(driver)\n html = get_html(url, captcha_text)\n else:\n html = get_html(url)\n data = parse_html(html)\n driver.quit()\n return data\n\n\ndef get_html(url, captcha_text=None):\n headers = {\n 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36',\n 'Referer': url\n }\n if captcha_text:\n cookies = requests.get('https://2captcha.com/in.php?key=' + api_key + '&method=userrecaptcha&googlekey=' + site_key + '&pageurl=' + url).text\n captcha_id = cookies.split('|')[1]\n captcha_answer = requests.get('https://2captcha.com/res.php?key=' + api_key + '&action=get&id=' + captcha_id).text\n while 'CAPCHA_NOT_READY' in captcha_answer:\n time.sleep(5)\n captcha_answer = requests.get('https://2captcha.com/res.php?key=' + api_key + '&action=get&id=' + captcha_id).text\n captcha_token = captcha_answer.split('|')[1]\n r = requests.get(url + '&g-recaptcha-response=' + captcha_token, headers=headers, cookies={'2Captcha': captcha_id})\n return r.text\n else:\n r = requests.get(url, headers=headers)\n return r.text\n\n\ndef parse_html(html):\n soup = BeautifulSoup(html, 'html.parser')\n table = soup.find('table')\n rows = table.find_all('tr')\n data = []\n for row in rows:\n cols = row.find_all('td')\n cols = [ele.text.strip() for ele in cols]\n data.append([ele for ele in cols if ele])\n df = pd.DataFrame(data[1:], columns=data[0])\n return df\n\n\ndef solve_captcha(driver):\n task = anticaptchaofficial.ImageToTextTask(image_url=get_image_path(driver), **{'clientKey': api_key})\n captcha_text = task.solve()\n return captcha_text\n\n\ndef get_image_path(driver):\n driver.get('https://www.google.com/recaptcha/api2/demo')\n frame = driver.find_element_by_xpath('//iframe[contains(@src, "recaptcha")]')\n driver.switch_to.frame(frame)\n image_element = driver.find_element_by_xpath('//img[contains(@src, "google.com/recaptcha/api2/p")]')\n image_url = image_element.get_attribute('src')\n return image_url\n\n" > scraper.py && echo -e "import pandas as pd\n\ndef analyze_data(data):\n return calculate
 && echo -e "import pandas as pd\n\ndef analyze_data(data):\n return calculate_statistics(data)\n\n\ndef calculate_statistics(data):\n # Perform analysis and return results\n pass\n" > stats.py && echo -e "import pandas as pd\n\ndef view_data(data):\n # Visualize data\n pass\n" > views.py && echo -e "import pandas as pd\nimport os\n\ndef check_package(package_name):\n try:\n __import__(package_name)\n except ImportError:\n return False\n return True\n\ndef save_data(data, filename):\n path = os.path.join(os.getcwd(), filename)\n data.to_csv(path, index=False)\n" > utils.py && echo -e "from scraper import scrape_data\nfrom data_parser import parse_html\nfrom utils import save_data\n\n# Scraping data\nurl = 'https://www.example.com'\ndata = scrape_data(url)\n\n# Parsing data\nparsed_data = parse_html(data)\n\n# Saving data to CSV file\ndata_filename = 'data.csv'\nsave_data(parsed_data, data_filename)\n" > main.py && echo -e "from scraper import scrape_data\nfrom data_parser import parse_html\nfrom data_analyzer import analyze_data\nfrom data_visualizer import view_data\nfrom data_updater import update_data\nfrom utils import save_data\n\n# Scraping data\nurl = 'https://www.example.com'\ndata = scrape_data(url)\n\n# Parsing data\nparsed_data = parse_html(data)\n\n# Analyzing data\ndata_stats = analyze_data(parsed_data)\n\n# Visualizing data\nview_data(data_stats)\n" > dashboard.py && echo -e "https://www.example.com" > sites.txt 
@@ -264,8 +383,7 @@ class AddForm(Form):
     description = TextAreaField('Description', validators=[InputRequired()])
     image = StringField('Image URL', validators=[InputRequired()])
 class DeleteForm(Form):
-    entries = None
-install_package.py
+    entries = Noneinstall_package.py
 import pip
 # Modules nécessaires à l'application
 required_modules = ['beautifulsoup4', 'fake_useragent', 'matplotlib', 'numpy', 'pandas', 'plotly', 'requests', 'selenium', 'tqdm']
@@ -282,10 +400,10 @@ def install_missing_packages():
         print('Tous les packages nécessaires sont déjà installés.')
 main.py
 from flask import Flask, render_template
-from config import Config , DATA_FILE
+from config import DATA_FILE
 from models import Data
 from views import home, data, stats, update
-from utils import install_missing_packages
+from install_package import install_missing_packages
 from data_scraper import get_auction_data
 from data_analyzer import process_data
 from data_visualizer import generate_charts, generate_dashboards
@@ -295,11 +413,19 @@ from utils import add_entry_to_excel, delete_entry_from_excel, get_entry_by_id
 from forms import AddForm, DeleteForm
 import pandas as pd
 from flask import render_template, request, redirect, url_for
-from app import app
+import logging
+# Configuration du logger
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+# Exemple d'utilisation
+logging.debug('Un message de debug')
+logging.info('Un message d\'info')
+logging.warning('Un message d\'avertissement')
+logging.error('Un message d\'erreur')
+logging.critical('Un message critique')
 app = Flask(__name__)
 app.config.from_pyfile('config.py')
 def load_data_from_excel():
-    df = pd.read_excel(app.config['DATA_FILE'])
+    df = pd.read_excel(app.config[DATA_FILE])
     return df.to_dict(orient='records')
 @app.route('/')
 def index():
@@ -315,7 +441,7 @@ def add():
             'description': form.description.data,
             'image': form.image.data
         }
-        add_entry_to_excel(data, app.config['DATA_FILE'])
+        add_entry_to_excel(data, app.config[DATA_FILE])
         return redirect(url_for('index'))
     return render_template('add.html', form=form)
 @app.route('/delete', methods=['GET', 'POST'])
@@ -324,7 +450,7 @@ def delete():
     form.entries.choices = [(entry['id'], entry['name']) for entry in load_data_from_excel()]
     if request.method == 'POST' and form.validate():
         entry_id = form.entries.data
-        delete_entry_from_excel(entry_id, app.config['DATA_FILE'])
+        delete_entry_from_excel(entry_id, app.config[DATA_FILE])
         return redirect(url_for('index'))
     return render_template('delete.html', form=form)
 @app.route('/entry/<int:entry_id>')
@@ -423,11 +549,8 @@ class Data:
         return stats
 scraper.py
 import os
-import sys
 import time
-from config import config
 import random
-import data_parser
 import requests
 from bs4 import BeautifulSoup
 from stem import Signal
@@ -437,70 +560,129 @@ from selenium.webdriver.chrome.options import Options
 from selenium import webdriver
 import pandas as pd
 from python_anticaptcha import AnticaptchaClient, ImageToTextTask
+# Configure Tor proxy
 options = Options()
 options.headless = True
 options.add_argument("--window-size=1920,1200")
-driver = webdriver.Chrome(options=options, executable_path='chromedriver')
+socks_proxy = "socks5h://localhost:9050"
+capabilities = webdriver.DesiredCapabilities.CHROME.copy()
+capabilities['proxy']['socksVersion'] = 5
+driver = webdriver.Chrome(options=options, desired_capabilities=capabilities, executable_path='chromedriver')
 # Anti-captcha settings
 api_key = 'your-key-here'
 client = AnticaptchaClient(api_key)
 solver = ImageToTextTask(client)
-def scrape_data(url, min_sleep=1, max_sleep=5):
-    # set headers
-    ua = UserAgent()
-    headers = {'User-Agent': ua.random}
-    # create session
-    session = requests.Session()
-    session.headers.update(headers)
-    # get captcha image url
-    response = session.get(url)
-    soup = BeautifulSoup(response.content, 'html.parser')
-    captcha_url = soup.find('img', {'id': 'captcha_image'}).get('src')
-    # solve captcha with anti-captcha
-    captcha_response = solver.captcha_handler(captcha_url)
-    time.sleep(random.uniform(min_sleep, max_sleep))
-    # submit form with captcha response
-    data = {'captcha': captcha_response}
-    response = session.post(url, data=data)
-    time.sleep(random.uniform(min_sleep, max_sleep))
-    # parse html
-    soup = BeautifulSoup(response.content, 'html.parser')
-    data = parse_html(str(soup))
-    return data
-# rotate Tor identity
-def renew_tor_identity():
+# Define constants
+MIN_SLEEP = 1
+MAX_SLEEP = 5
+COLUMNS = ['Title', 'Author', 'Date', 'Content']
+# Define functions
+def get_html(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.content
+    except (requests.exceptions.RequestException, ValueError):
+        return None
+def solve_captcha(url):
+    try:
+        session = requests.Session()
+        response = session.get(url)
+        soup = BeautifulSoup(response.content, 'html.parser')
+        captcha_url = soup.find('img', {'id': 'captcha_image'}).get('src')
+        captcha_response = solver.captcha_handler(captcha_url)
+        return captcha_response
+    except (AttributeError, TypeError, requests.exceptions.RequestException):
+        return None
+def scrape_data(url):
+    try:
+        # Set headers
+        ua = UserAgent()
+        headers = {'User-Agent': ua.random}
+        # Create session
+        session = requests.Session()
+        session.headers.update(headers)
+        # Get captcha response
+        captcha_response = solve_captcha(url)
+        time.sleep(random.uniform(MIN_SLEEP, MAX_SLEEP))
+        # Submit form with captcha response
+        data = {'captcha': captcha_response}
+        response = session.post(url, data=data)
+        time.sleep(random.uniform(MIN_SLEEP, MAX_SLEEP))
+        # Parse html
+        soup = BeautifulSoup(response.content, 'html.parser')
+        data = parse_html(str(soup))
+        return data
+    except (AttributeError, TypeError, requests.exceptions.RequestException):
+        return None
+def rotate_tor_identity():
     with Controller.from_port(port=9051) as controller:
         controller.authenticate(password='your-password-here')
         controller.signal(Signal.NEWNYM)
-def set_tor_proxy():
-    socks_proxy = "socks5h://localhost:9050"
-    capabilities = webdriver.DesiredCapabilities.CHROME.copy()
-    capabilities['proxy'] = {
-        "proxyType": "MANUAL",
-        "socksProxy": socks_proxy
-    }
-    driver = webdriver.Chrome(options=options, desired_capabilities=capabilities, executable_path='chromedriver')
-    return driver
-# Step 1: Get list of URLs to scrape
+def set_cookies(session, cookies):
+    for cookie in cookies:
+        session.cookies.set(cookie['name'], cookie['value'])
+def get_cookies(session):
+    return session.cookies.get_dict()
 def get_urls():
-    urls = []
-    for page in range(1, 6):
-        url = f'https://example.com/page-{page}'
+    urls = ["https://www.interencheres.com/materiels-professionnels/mobilier-et-materiel-de-bureau-informatique/"]
+    for page in range(2, 10):
+        url = f'https://www.interencheres.com/materiels-professionnels/mobilier-et-materiel-de-bureau-informatique/?page={page}'
         urls.append(url)
     return urls
 def main():
-    # configure Tor proxy
-    driver = set_tor_proxy()
-    # get list of URLs to scrape
-    URLS = get_urls()
-    # loop over URLs to scrape
-    for url in URLS:
-        # scrape data
-        data = scrape_data(url, MIN_SLEEP, MAX_SLEEP)
-        # save data to file using Pandas
-        COLUMNS = ['Title', 'Author', 'Date', 'Content']
-        df = pd.DataFrame(data, columns=COLUMNS)
-        df.to_csv('data.csv', index=False, mode='a', header=False)
+    # Get list of URLs to scrape
+    urls = get_urls()
+    # Loop over URLs to scrape
+    for url in urls:
+        try:
+            # Scrape data
+            data = scrape_data(url)
+            if data is None:
+                continue
+            # Save data to file using Pandas
+            df = pd.DataFrame(data, columns=COLUMNS)
+            df.to_csv('data.csv', index=False, mode='a', header=False)
+            # Rotate Tor identity and randomize delays
+            rotate_tor_identity()
+            time.sleep(random.uniform(MIN_SLEEP, MAX_SLEEP))
+        except Exception as e:
+            print(f"Error scraping {url}: {str(e)}")
+            continue
+    # Quit webdriver
+    driver.quit()sonde.py
+import time
+import pandas as pd
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+# Configuration de Selenium
+chrome_options = Options()
+chrome_options.add_argument('--headless')
+driver_service = Service('./chromedriver')
+driver = webdriver.Chrome(service=driver_service, options=chrome_options)
+# Récupération de la page de recherche de lots
+url = 'https://www.interencheres.com/recherche/lots'
+driver.get(url)
+# Recherche de termes liés aux lots aux enchères
+search_input = driver.find_element(By.CSS_SELECTOR, 'input-71')
+search_input.send_keys('informatique')
+search_input.send_keys(Keys.RETURN)
+# Attendre que la page se charge complètement
+time.sleep(5)
+# Récupération des résultats de la recherche
+lots = []
+links = driver.find_elements(By.CSS_SELECTOR, 'sale-item')
+for link in links:
+    lot = {'title': link.text, 'url': link.get_attribute('href')}
+    lots.append(lot)
+# Stocker les résultats dans un fichier Excel
+df = pd.DataFrame(lots)
+df.to_excel('lots_encheres.xlsx', index=False)
+# Fermer le navigateur
+driver.quit()
 test_scraper.py
 import unittest
 from unittest.mock import MagicMock, patch
@@ -591,664 +773,22 @@ def get_user(username, users_file):
             user_info = line.strip().split(",")
             if user_info[0] == username:
                 return {"username": user_info[0], "password": user_info[1]}
-    return None
-views.py
-import pandas as pd  
-def view_data(data):  # Visualize data  pass 
-    return
-
-=== articles.py ===
-
-from flask import Flask, render_template, request, jsonify
-from flask_cors import CORS
+    return Noneviews.py
 import pandas as pd
-import numpy as np
-import joblib
-import os
-def create_article(article_data, articles_file):
-    """
-    Crée un article en ajoutant les informations passées en paramètre dans le fichier `articles_file`.
-    """
-    with open(articles_file, "a") as file:
-        file.write(",".join(article_data) + "\n")
-def get_articles(articles_file):
-    """
-    Récupère tous les articles stockés dans le fichier `articles_file`.
-    Retourne une liste d'articles, chaque article étant représenté par un dictionnaire contenant son titre et son contenu.
-    """
-    articles = []
-    with open(articles_file, "r") as file:
-        for line in file:
-            article_info = line.strip().split(",")
-            articles.append({"title": article_info[0], "content": article_info[1]})
-    return articles
-def get_prediction(title, content, model):
-    """
-    Utilise le modèle de prédiction passé en paramètre pour faire une prédiction sur l'article avec le titre et le contenu passés en paramètre.
-    Retourne le label de la prédiction.
-    """
-    article_text = f"{title} {content}"
-    prediction = model.predict([article_text])[0]
-    return prediction
-from flask import Flask, render_template, request, jsonify
-from flask_cors import CORS
-import pandas as pd
-import numpy as np
-import joblib
-import os
-def create_app():
-    app = Flask(__name__)
-    CORS(app)
-    # Charger le modèle entraîné
-    model = joblib.load(os.path.join("model", "model.joblib"))
-    # Charger le vecteuriseur de texte
-    vectorizer = joblib.load(os.path.join("model", "vectorizer.joblib"))
-    @app.route('/')
-    def index():
-        return render_template('index.html')
-    @app.route('/predict', methods=['POST'])
-    def predict():
-        # Récupérer les données du formulaire
-        data = request.form['data']
-        # Prétraitement du texte
-        data = data.lower()
-        data = [data]
-        data = vectorizer.transform(data).toarray()
-        # Faire la prédiction
-        prediction = model.predict(data)
-        # Renvoyer la réponse en format JSON
-        return jsonify({'result': int(prediction[0])})
-    @app.route('/predict_file', methods=['POST'])
-    def predict_file():
-        # Récupérer le fichier de données
-        data = pd.read_excel(request.files.get('file'))
-        # Prétraitement du texte
-        data = data['description'].apply(lambda x: x.lower())
-        data = vectorizer.transform(data).toarray()
-        # Faire la prédiction
-        prediction = model.predict(data)
-        # Ajouter la colonne de prédictions au DataFrame original
-        data['category'] = prediction
-        # Convertir le DataFrame en dictionnaire
-        data_dict = data.to_dict(orient='records')
-        # Renvoyer la réponse en format JSON
-        return jsonify({'result': data_dict})
-    return app
-
-=== backup.py ===
-
-import os
-import pandas as pd
-from datetime import datetime
-import openpyxl
-# Définition du dossier de sauvegarde
-BACKUP_DIR = '/path/to/backup/folder/'
-def backup_data(data):
-    """
-    Sauvegarde les données dans un fichier Excel dans un dossier de sauvegarde.
-    Le nom du fichier est généré en fonction de la date et de l'heure courante.
-    """
-    # Générer le nom de fichier basé sur la date et l'heure actuelles
-    filename = 'data_backup_{}.xlsx'.format(datetime.now().strftime('%Y%m%d_%H%M%S'))
-    # Créer un DataFrame Pandas à partir des données
-    df = pd.DataFrame(data)
-    # Sauvegarder les données dans un fichier Excel
-    backup_path = os.path.join(BACKUP_DIR, filename)
-    writer = pd.ExcelWriter(backup_path, engine='openpyxl')
-    try:
-        writer.book = openpyxl.load_workbook(backup_path)
-        writer.sheets = {ws.title: ws for ws in writer.book.worksheets}
-    except FileNotFoundError:
-        pass
-    df.to_excel(writer, index=False, sheet_name='data')
-    writer.save()
-
-=== config.py ===
-
-import os
-from dotenv import load_dotenv
-load_dotenv()
-class Config:
-    # Flask settings
-    SECRET_KEY = os.environ.get('SECRET_KEY')
-    DEBUG = os.environ.get('DEBUG', False)
-    # Data settings
-    # Ajouter une variable DATA_FILE pour stocker le chemin vers le fichier Excel.
-    DATA_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data.xlsx')
-    BACKUP_FOLDER = os.environ.get('BACKUP_FOLDER', '/path/to/backup/folder/')
-    BACKUP_INTERVAL = os.environ.get('BACKUP_INTERVAL', 24)
-    MIN_SLEEP = os.environ.get('MIN_SLEEP', 1)
-    MAX_SLEEP = os.environ.get('MAX_SLEEP', 5)
-    # Scraper settings
-    API_KEY = os.environ.get('API_KEY', 'your_api_key_here')
-    # Database settings
-    DB_HOST = os.environ.get('DB_HOST', 'localhost')
-    DB_PORT = os.environ.get('DB_PORT', '5432')
-    DB_NAME = os.environ.get('DB_NAME', 'mydatabase')
-    DB_USER = os.environ.get('DB_USER', 'mydatabaseuser')
-    DB_PASSWORD = os.environ.get('DB_PASSWORD', 'mypassword')
-
-=== dashboard.py ===
-
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import dash
-import dash_core_components as dcc
-import dash_html_components as html
-import plotly.graph_objs as go
-def create_dashboard(data):
-    """Crée un dashboard à partir des données passées en paramètre."""
-    app = dash.Dash(__name__)
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=data['date'], y=data['price'], mode='lines+markers', name='Prix'))
-    app.layout = html.Div(children=[
-        html.H1(children='Dashboard'),
-        html.Div(children='''
-            Evolution du prix dans le temps
-        '''),
-        dcc.Graph(
-            id='graph',
-            figure=fig
-        )
-    ])
-    app.run_server(debug=True)
-
-=== data_analyzer.py ===
-
-import pandas as pd
-def analyze_data(data, calculate_statistics):
-    stats = calculate_statistics(data)
-    # code to analyze data and calculate statistics using Pandas
-    # ...
-    # return statistics as a Pandas DataFrame
-    stats_df = pd.DataFrame(...)
-    return stats_df
-def calculate_statistics(data):
-    # code to calculate statistics using Pandas
-    # ...
-    # return statistics as a Pandas DataFrame
-    stats_df = pd.DataFrame(...)
-    return stats_df
-
-=== data_parser.py ===
-
-from bs4 import BeautifulSoup
-import pandas as pd
-def parse_data(raw_data):
-    soup = BeautifulSoup(raw_data, 'html.parser')
-    # code to extract data from html using BeautifulSoup
-    # ...
-    # return data as a Pandas DataFrame
-    data = pd.DataFrame(...)
-    return data
-
-=== data_scraper.py ===
-
-from selenium import webdriver
-from time import sleep
-from scraper import get_html
-from data_parser import parse_data
-def scrape_data(url):
-    # Set up Selenium webdriver
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless')
-    options.add_argument('--disable-gpu')
-    driver = webdriver.Chrome(options=options)
-    driver.get(url)
-    # Wait for page to load
-    sleep(5)
-    # Get page source
-    html = driver.page_source
-    # Close Selenium webdriver
-    driver.quit()
-    # Parse data
-    parsed_data = parse_data(html)
-    return parsed_data
-
-=== data_updater.py ===
-
-import pandas as pd
-from apscheduler.schedulers.blocking import BlockingScheduler
-from data_scraper import scrape_data
-from data_parser import parse_data
-from data_visualizer import create_dashboard
-from utils import save_data_to_file
-# Définition de l'URL pour scraper les données
-DATA_URL = 'https://example.com'
-# Définition de l'intervalle de mise à jour automatique (en heures)
-UPDATE_INTERVAL = 24
-# Initialisation des données
-data = pd.DataFrame()
-def update_data():
-    global data
-    # Scraper les données
-    html_data = scrape_data(DATA_URL)
-    # Parser les données
-    parsed_data = parse_data(html_data)
-    # Vérifier si de nouvelles données ont été récupérées
-    if not parsed_data.empty and not parsed_data.equals(data):
-        # Mettre à jour les données
-        data = parsed_data
-        # Créer un dashboard
-        create_dashboard(data)
-        # Sauvegarder les données
-        save_data_to_file(data, 'data.csv')
-        print('Data updated successfully')
-    else:
-        print('No new data available')
-# Planification de la mise à jour automatique
-scheduler = BlockingScheduler()
-scheduler.add_job(update_data, 'interval', hours=UPDATE_INTERVAL)
-if __name__ == '__main__':
-    scheduler.start()
-
-=== data_visualizer.py ===
-
-import matplotlib.pyplot as plt
-def view_data(data):
-    # code to visualize data using Matplotlib
-    # ...
-    # show the plot
-    plt.show()
-
-=== deployment.py ===
-
-mkdir my_app && cd my_app && touch scraper.py stats.py views.py utils.py main.py data_scraper.py data_parser.py data_analyzer.py data_visualizer.py data_updater.py dashboard.py sites.txt && echo -e "import pandas as pd\nimport requests\nimport json\nimport time\nimport selenium.webdriver as webdriver\nfrom bs4 import BeautifulSoup\nfrom utils import check_package, save_data\n\nif check_package('anticaptchaofficial'):\n import anticaptchaofficial\n\n\ndef scrape_data(url):\n driver = webdriver.Chrome()\n if 'google.com/recaptcha/' in url:\n captcha_text = solve_captcha(driver)\n html = get_html(url, captcha_text)\n else:\n html = get_html(url)\n data = parse_html(html)\n driver.quit()\n return data\n\n\ndef get_html(url, captcha_text=None):\n headers = {\n 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36',\n 'Referer': url\n }\n if captcha_text:\n cookies = requests.get('https://2captcha.com/in.php?key=' + api_key + '&method=userrecaptcha&googlekey=' + site_key + '&pageurl=' + url).text\n captcha_id = cookies.split('|')[1]\n captcha_answer = requests.get('https://2captcha.com/res.php?key=' + api_key + '&action=get&id=' + captcha_id).text\n while 'CAPCHA_NOT_READY' in captcha_answer:\n time.sleep(5)\n captcha_answer = requests.get('https://2captcha.com/res.php?key=' + api_key + '&action=get&id=' + captcha_id).text\n captcha_token = captcha_answer.split('|')[1]\n r = requests.get(url + '&g-recaptcha-response=' + captcha_token, headers=headers, cookies={'2Captcha': captcha_id})\n return r.text\n else:\n r = requests.get(url, headers=headers)\n return r.text\n\n\ndef parse_html(html):\n soup = BeautifulSoup(html, 'html.parser')\n table = soup.find('table')\n rows = table.find_all('tr')\n data = []\n for row in rows:\n cols = row.find_all('td')\n cols = [ele.text.strip() for ele in cols]\n data.append([ele for ele in cols if ele])\n df = pd.DataFrame(data[1:], columns=data[0])\n return df\n\n\ndef solve_captcha(driver):\n task = anticaptchaofficial.ImageToTextTask(image_url=get_image_path(driver), **{'clientKey': api_key})\n captcha_text = task.solve()\n return captcha_text\n\n\ndef get_image_path(driver):\n driver.get('https://www.google.com/recaptcha/api2/demo')\n frame = driver.find_element_by_xpath('//iframe[contains(@src, "recaptcha")]')\n driver.switch_to.frame(frame)\n image_element = driver.find_element_by_xpath('//img[contains(@src, "google.com/recaptcha/api2/p")]')\n image_url = image_element.get_attribute('src')\n return image_url\n\n" > scraper.py && echo -e "import pandas as pd\n\ndef analyze_data(data):\n return calculate
-&& echo -e "import pandas as pd\n\ndef analyze_data(data):\n return calculate_statistics(data)\n\n\ndef calculate_statistics(data):\n # Perform analysis and return results\n pass\n" > stats.py && echo -e "import pandas as pd\n\ndef view_data(data):\n # Visualize data\n pass\n" > views.py && echo -e "import pandas as pd\nimport os\n\ndef check_package(package_name):\n try:\n __import__(package_name)\n except ImportError:\n return False\n return True\n\ndef save_data(data, filename):\n path = os.path.join(os.getcwd(), filename)\n data.to_csv(path, index=False)\n" > utils.py && echo -e "from scraper import scrape_data\nfrom data_parser import parse_html\nfrom utils import save_data\n\n# Scraping data\nurl = 'https://www.example.com'\ndata = scrape_data(url)\n\n# Parsing data\nparsed_data = parse_html(data)\n\n# Saving data to CSV file\ndata_filename = 'data.csv'\nsave_data(parsed_data, data_filename)\n" > main.py && echo -e "from scraper import scrape_data\nfrom data_parser import parse_html\nfrom data_analyzer import analyze_data\nfrom data_visualizer import view_data\nfrom data_updater import update_data\nfrom utils import save_data\n\n# Scraping data\nurl = 'https://www.example.com'\ndata = scrape_data(url)\n\n# Parsing data\nparsed_data = parse_html(data)\n\n# Analyzing data\ndata_stats = analyze_data(parsed_data)\n\n# Visualizing data\nview_data(data_stats)\n" > dashboard.py && echo -e "https://www.example.com" > sites.txt 
-
-=== forms.py ===
-
-from flask_wtf import FlaskForm
-from wtforms import StringField, FloatField, IntegerField, SubmitField
-from wtforms.validators import DataRequired, NumberRange
-from wtforms.widgets import TextAreaField
-# Ajouter une classe AddForm pour représenter le formulaire d'ajout d'une entrée.
-class AddForm(FlaskForm):
-    name = StringField("Name", validators=[DataRequired()])
-    category = StringField("Category", validators=[DataRequired()])
-    description = StringField("Description", validators=[DataRequired()])
-    price = FloatField("Price", validators=[DataRequired(), NumberRange(min=0)])
-    quantity = IntegerField("Quantity", validators=[DataRequired(), NumberRange(min=0)])
-    submit = SubmitField("Add")
-# Ajouter une classe DeleteForm pour représenter le formulaire de suppression d'une entrée.
-class AddForm(FlaskForm):
-    title = StringField('Titre', validators=[DataRequired()])
-    body = TextAreaField('Contenu', validators=[DataRequired()])
-    submit = SubmitField('Ajouter')
-from wtforms import Form, StringField, TextAreaField
-from wtforms.validators import InputRequired, Length
-class AddForm(Form):
-    id = StringField('ID', validators=[InputRequired(), Length(max=255)])
-    name = StringField('Name', validators=[InputRequired(), Length(max=255)])
-    description = TextAreaField('Description', validators=[InputRequired()])
-    image = StringField('Image URL', validators=[InputRequired()])
-class DeleteForm(Form):
-    entries = None
-
-=== install_package.py ===
-
-import pip
-# Modules nécessaires à l'application
-required_modules = ['beautifulsoup4', 'fake_useragent', 'matplotlib', 'numpy', 'pandas', 'plotly', 'requests', 'selenium', 'tqdm']
-def install_missing_packages():
-    """Installe les paquets manquants nécessaires à l'application."""
-    installed_packages = pip.get_installed_distributions()
-    installed_packages_list = [package.project_name for package in installed_packages]
-    packages_to_install = [package for package in required_modules if package not in installed_packages_list]
-    if packages_to_install:
-        for package in packages_to_install:
-            pip.main(['install', package])
-        print('Installation des packages manquants terminée avec succès.')
-    else:
-        print('Tous les packages nécessaires sont déjà installés.')
-
-=== main.py ===
-
-from flask import Flask, render_template
-from config import Config , DATA_FILE
-from models import Data
-from views import home, data, stats, update
-from utils import install_missing_packages
-from data_scraper import get_auction_data
-from data_analyzer import process_data
-from data_visualizer import generate_charts, generate_dashboards
-from data_updater import update_data
-from backup import backup_data
-from utils import add_entry_to_excel, delete_entry_from_excel, get_entry_by_id
-from forms import AddForm, DeleteForm
-import pandas as pd
-from flask import render_template, request, redirect, url_for
-from app import app
-app = Flask(__name__)
-app.config.from_pyfile('config.py')
-def load_data_from_excel():
-    df = pd.read_excel(app.config['DATA_FILE'])
-    return df.to_dict(orient='records')
-@app.route('/')
-def index():
-    entries = load_data_from_excel()
-    return render_template('index.html', entries=entries)
-@app.route('/add', methods=['GET', 'POST'])
-def add():
-    form = AddForm(request.form)
-    if request.method == 'POST' and form.validate():
-        data = {
-            'id': form.id.data,
-            'name': form.name.data,
-            'description': form.description.data,
-            'image': form.image.data
-        }
-        add_entry_to_excel(data, app.config['DATA_FILE'])
-        return redirect(url_for('index'))
-    return render_template('add.html', form=form)
-@app.route('/delete', methods=['GET', 'POST'])
-def delete():
-    form = DeleteForm(request.form)
-    form.entries.choices = [(entry['id'], entry['name']) for entry in load_data_from_excel()]
-    if request.method == 'POST' and form.validate():
-        entry_id = form.entries.data
-        delete_entry_from_excel(entry_id, app.config['DATA_FILE'])
-        return redirect(url_for('index'))
-    return render_template('delete.html', form=form)
-@app.route('/entry/<int:entry_id>')
-def entry(entry_id):
-    entry = get_entry_by_id(entry_id, app.config['DATA_FILE'])
-    return render_template('entry.html', entry=entry)
-@app.route('/')
-def index():
-    return home()
-@app.route('/data')
-def get_data():
-    return data()
-@app.route('/stats')
-def get_stats():
-    return stats(data)
-@app.route('/update')
-def update_data_route():
-    message = update_data(data)
-    return render_template('update.html', message=message)
-if __name__ == '__main__':
-    # Mettre à jour les données automatiquement tous les jours
-    update_data(data, daily=True)
-    # Installer automatiquement les paquets manquants ou obsolètes
-    install_missing_packages()
-    # Extraire les données des sites web d'enchères
-    auction_data = get_auction_data()
-    # Traiter les données extraites
-    processed_data = process_data(auction_data)
-    # Générer les graphiques et les tableaux de bord pour la visualisation des données
-    generate_charts(processed_data)
-    generate_dashboards(processed_data)
-    # Sauvegarder les données collectées et les stocker dans un emplacement sécurisé
-    backup_data(processed_data)
-    app.run(debug=True)
-
-=== models.py ===
-
-import pandas as pd
-class Data:
-    """
-    Classe pour stocker et traiter les données des enchères.
-    """
-    def __init__(self, data_file='data.csv'):
-        """
-        Initialise un objet Data à partir d'un fichier CSV.
-        Args:
-            data_file (str): Le nom du fichier contenant les données.
-        """
-        self.data_file = data_file
-        self.df = pd.read_csv(data_file)
-    def get_data(self):
-        """
-        Retourne les données stockées dans l'objet.
-        Returns:
-            pandas.DataFrame: Les données stockées dans l'objet.
-        """
-        return self.df
-    def update_data(self, new_data):
-        """
-        Met à jour les données stockées dans l'objet avec de nouvelles données.
-        Args:
-            new_data (pandas.DataFrame): Les nouvelles données à ajouter.
-        """
-        self.df = pd.concat([self.df, new_data])
-        self.df.to_csv(self.data_file, index=False)
-    def filter_data(self, filters):
-        """
-        Filtre les données stockées dans l'objet selon les filtres spécifiés.
-        Args:
-            filters (dict): Un dictionnaire de filtres à appliquer aux données.
-        Returns:
-            pandas.DataFrame: Les données filtrées.
-        """
-        filtered_data = self.df
-        for column, value in filters.items():
-            filtered_data = filtered_data.loc[filtered_data[column] == value]
-        return filtered_data
-    def sort_data(self, column, ascending=True):
-        """
-        Trie les données stockées dans l'objet selon une colonne spécifiée.
-        Args:
-            column (str): Le nom de la colonne à utiliser pour le tri.
-            ascending (bool): True si le tri doit être effectué dans l'ordre croissant, False sinon.
-        Returns:
-            pandas.DataFrame: Les données triées.
-        """
-        sorted_data = self.df.sort_values(column, ascending=ascending)
-        return sorted_data
-    def get_stats(self, column):
-        """
-        Retourne les statistiques descriptives pour une colonne spécifiée.
-        Args:
-            column (str): Le nom de la colonne pour laquelle calculer les statistiques.
-        Returns:
-            pandas.Series: Les statistiques descriptives pour la colonne spécifiée.
-        """
-        stats = self.df[column].describe()
-        return stats
-
-=== scraper.py ===
-
-import os
-import sys
-import time
-from config import config
-import random
-import data_parser
-import requests
-from bs4 import BeautifulSoup
-from stem import Signal
-from stem.control import Controller
-from fake_useragent import UserAgent
-from selenium.webdriver.chrome.options import Options
-from selenium import webdriver
-import pandas as pd
-from python_anticaptcha import AnticaptchaClient, ImageToTextTask
-options = Options()
-options.headless = True
-options.add_argument("--window-size=1920,1200")
-driver = webdriver.Chrome(options=options, executable_path='chromedriver')
-# Anti-captcha settings
-api_key = 'your-key-here'
-client = AnticaptchaClient(api_key)
-solver = ImageToTextTask(client)
-def scrape_data(url, min_sleep=1, max_sleep=5):
-    # set headers
-    ua = UserAgent()
-    headers = {'User-Agent': ua.random}
-    # create session
-    session = requests.Session()
-    session.headers.update(headers)
-    # get captcha image url
-    response = session.get(url)
-    soup = BeautifulSoup(response.content, 'html.parser')
-    captcha_url = soup.find('img', {'id': 'captcha_image'}).get('src')
-    # solve captcha with anti-captcha
-    captcha_response = solver.captcha_handler(captcha_url)
-    time.sleep(random.uniform(min_sleep, max_sleep))
-    # submit form with captcha response
-    data = {'captcha': captcha_response}
-    response = session.post(url, data=data)
-    time.sleep(random.uniform(min_sleep, max_sleep))
-    # parse html
-    soup = BeautifulSoup(response.content, 'html.parser')
-    data = parse_html(str(soup))
-    return data
-# rotate Tor identity
-def renew_tor_identity():
-    with Controller.from_port(port=9051) as controller:
-        controller.authenticate(password='your-password-here')
-        controller.signal(Signal.NEWNYM)
-def set_tor_proxy():
-    socks_proxy = "socks5h://localhost:9050"
-    capabilities = webdriver.DesiredCapabilities.CHROME.copy()
-    capabilities['proxy'] = {
-        "proxyType": "MANUAL",
-        "socksProxy": socks_proxy
-    }
-    driver = webdriver.Chrome(options=options, desired_capabilities=capabilities, executable_path='chromedriver')
-    return driver
-# Step 1: Get list of URLs to scrape
-def get_urls():
-    urls = []
-    for page in range(1, 6):
-        url = f'https://example.com/page-{page}'
-        urls.append(url)
-    return urls
-def main():
-    # configure Tor proxy
-    driver = set_tor_proxy()
-    # get list of URLs to scrape
-    URLS = get_urls()
-    # loop over URLs to scrape
-    for url in URLS:
-        # scrape data
-        data = scrape_data(url, MIN_SLEEP, MAX_SLEEP)
-        # save data to file using Pandas
-        COLUMNS = ['Title', 'Author', 'Date', 'Content']
-        df = pd.DataFrame(data, columns=COLUMNS)
-        df.to_csv('data.csv', index=False, mode='a', header=False)
-
-=== test_scraper.py ===
-
-import unittest
-from unittest.mock import MagicMock, patch
-from app.data_scraper import scrape_data
-class TestDataScraper(unittest.TestCase):
-    def setUp(self):
-        self.url = 'https://example.com'
-    @patch('app.data_scraper.requests.Session')
-    @patch('app.data_scraper.ImageToTextTask')
-    @patch('app.data_scraper.parse_html')
-    def test_scrape_data(self, mock_parse_html, mock_ImageToTextTask, mock_Session):
-        # Mock response object
-        response = MagicMock()
-        response.content = b'<html><body>test</body></html>'
-        response.status_code = 200
-        # Mock captcha image url
-        mock_soup = MagicMock()
-        mock_soup.find.return_value.get.return_value = 'captcha_url'
-        mock_Session.return_value.get.return_value = response
-        mock_Session.return_value.headers = {}
-        mock_Session.return_value.headers.update.return_value = None
-        mock_parse_html.return_value = {'Title': 'Test', 'Author': 'John Doe', 'Date': '2022-02-23', 'Content': 'Test content'}
-        # Mock captcha response
-        mock_solver = MagicMock()
-        mock_ImageToTextTask.return_value = mock_solver
-        mock_solver.captcha_handler.return_value = 'captcha_response'
-        # Call function
-        data = scrape_data(self.url)
-        # Assertions
-        mock_Session.assert_called_once()
-        mock_Session.return_value.get.assert_called_once_with(self.url)
-        mock_soup.find.assert_called_once_with('img', {'id': 'captcha_image'})
-        mock_solver.captcha_handler.assert_called_once_with('captcha_url')
-        mock_parse_html.assert_called_once_with('<html><body>test</body></html>')
-        self.assertEqual(data, {'Title': 'Test', 'Author': 'John Doe', 'Date': '2022-02-23', 'Content': 'Test content'})
-
-=== utils.py ===
-
-import pandas as pd
-import openpyxl
-from config import DATA_FILE
-...
-def add_entry_to_excel(entry):
-    wb = openpyxl.load_workbook(DATA_FILE)
-    sheet = wb.active
-    sheet.append([entry['name'], entry['description'], entry['price']])
-    wb.save(DATA_FILE)
-def delete_entry_from_excel(entry):
-    wb = openpyxl.load_workbook(DATA_FILE)
-    sheet = wb.active
-    for row in sheet.iter_rows(values_only=True):
-        if row[0] == entry['name'] and row[1] == entry['description'] and row[2] == entry['price']:
-            sheet.delete_rows(row[0].row)
-            break
-    wb.save(DATA_FILE)
-def get_entry_by_id(id):
-    wb = openpyxl.load_workbook(DATA_FILE)
-    sheet = wb.active
-    for row in sheet.iter_rows(min_row=2, values_only=True):
-        if row[0] == id:
-            return {'name': row[1], 'description': row[2], 'price': row[3]}
-    return None
-import pandas as pd
-def add_entry_to_excel(data, file_path):
-    df = pd.read_excel(file_path)
-    df = df.append(data, ignore_index=True)
-    df.to_excel(file_path, index=False)
-def delete_entry_from_excel(entry_id, file_path):
-    df = pd.read_excel(file_path)
-    df = df[df['id'] != entry_id]
-    df.to_excel(file_path, index=False)
-def get_entry_by_id(entry_id, file_path):
-    df = pd.read_excel(file_path)
-    entry = df.loc[df['id'] == entry_id].to_dict(orient='records')
-    return entry[0] if entry else None
-
-=== utilsateurs.py ===
-
-def create_user(user_data, users_file):
-    """
-    Crée un utilisateur en ajoutant les informations passées en paramètre dans le fichier `users_file`.
-    """
-    with open(users_file, "a") as file:
-        file.write(",".join(user_data) + "\n")
-def get_user(username, users_file):
-    """
-    Récupère les informations de l'utilisateur correspondant au nom d'utilisateur `username` dans le fichier `users_file`.
-    Retourne un dictionnaire avec les informations de l'utilisateur ou None si l'utilisateur n'existe pas.
-    """
-    with open(users_file, "r") as file:
-        for line in file:
-            user_info = line.strip().split(",")
-            if user_info[0] == username:
-                return {"username": user_info[0], "password": user_info[1]}
-    return None
-
-=== views.py ===
-
-import pandas as pd  
-def view_data(data):  # Visualize data  pass 
-    return
-
-=== add.html ===
-
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-    <title>Ajouter une entrée</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  </head>
-  <body>
-    <h1>Ajouter une entrée</h1>
-    <form method="POST" action="{{ url_for('add') }}">
-      <!-- Ajouter les champs du formulaire pour ajouter une entrée -->
-    </form>
-  </body>
-</html>
+from flask import Blueprint, render_template
+views_bp = Blueprint('views_bp', __name__)
+@views_bp.route('/')
+def home():
+    return render_template('home.html', title='Home')
+@views_bp.route('/data')
+def data():
+    return render_template('data.html', title='Data')
+@views_bp.route('/stats')
+def stats():
+    return render_template('stats.html', title='Stats')
+@views_bp.route('/update')
+def update():
+    return render_template('update.html', title='Update')
 articles.py
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
@@ -1338,7 +878,8 @@ def backup_data(data):
     Le nom du fichier est généré en fonction de la date et de l'heure courante.
     """
     # Générer le nom de fichier basé sur la date et l'heure actuelles
-    filename = 'data_backup_{}.xlsx'.format(datetime.now().strftime('%Y%m%d_%H%M%S'))
+    filename = 'data_backup_{}.xlsx'.format(
+        datetime.now().strftime('%Y%m%d_%H%M%S'))
     # Créer un DataFrame Pandas à partir des données
     df = pd.DataFrame(data)
     # Sauvegarder les données dans un fichier Excel
@@ -1353,28 +894,21 @@ def backup_data(data):
     writer.save()
 config.py
 import os
-from dotenv import load_dotenv
-load_dotenv()
-class Config:
-    # Flask settings
-    SECRET_KEY = os.environ.get('SECRET_KEY')
-    DEBUG = os.environ.get('DEBUG', False)
-    # Data settings
-    # Ajouter une variable DATA_FILE pour stocker le chemin vers le fichier Excel.
-    DATA_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data.xlsx')
-    BACKUP_FOLDER = os.environ.get('BACKUP_FOLDER', '/path/to/backup/folder/')
-    BACKUP_INTERVAL = os.environ.get('BACKUP_INTERVAL', 24)
-    MIN_SLEEP = os.environ.get('MIN_SLEEP', 1)
-    MAX_SLEEP = os.environ.get('MAX_SLEEP', 5)
-    # Scraper settings
-    API_KEY = os.environ.get('API_KEY', 'your_api_key_here')
-    # Database settings
-    DB_HOST = os.environ.get('DB_HOST', 'localhost')
-    DB_PORT = os.environ.get('DB_PORT', '5432')
-    DB_NAME = os.environ.get('DB_NAME', 'mydatabase')
-    DB_USER = os.environ.get('DB_USER', 'mydatabaseuser')
-    DB_PASSWORD = os.environ.get('DB_PASSWORD', 'mypassword')
-dashboard.py
+# Flask settings
+SECRET_KEY = os.environ.get('SECRET_KEY')
+DEBUG = os.environ.get('DEBUG', False)# Data settings
+# Ajouter une variable DATA_FILE pour stocker le chemin vers le fichier Excel.
+DATA_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data.xlsx')
+BACKUP_FOLDER = os.environ.get('BACKUP_FOLDER', '/path/to/backup/folder/')
+BACKUP_INTERVAL = os.environ.get('BACKUP_INTERVAL', 24)
+MIN_SLEEP = os.environ.get('MIN_SLEEP', 1)
+MAX_SLEEP = os.environ.get('MAX_SLEEP', 5)# Scraper settings
+API_KEY = os.environ.get('API_KEY', 'your_api_key_here')# Database settings
+DB_HOST = os.environ.get('DB_HOST', 'localhost')
+DB_PORT = os.environ.get('DB_PORT', '5432')
+DB_NAME = os.environ.get('DB_NAME', 'mydatabase')
+DB_USER = os.environ.get('DB_USER', 'mydatabaseuser')
+DB_PASSWORD = os.environ.get('DB_PASSWORD', 'mypassword')dashboard.py
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -1400,34 +934,89 @@ def create_dashboard(data):
     app.run_server(debug=True)
 data_analyzer.py
 import pandas as pd
-def analyze_data(data, calculate_statistics):
-    stats = calculate_statistics(data)
-    # code to analyze data and calculate statistics using Pandas
-    # ...
-    # return statistics as a Pandas DataFrame
-    stats_df = pd.DataFrame(...)
-    return stats_df
-def calculate_statistics(data):
-    # code to calculate statistics using Pandas
-    # ...
-    # return statistics as a Pandas DataFrame
-    stats_df = pd.DataFrame(...)
-    return stats_df
+import numpy as np
+import matplotlib.pyplot as plt
+def process_data(file_path):
+    # Lire les données à partir du fichier CSV
+    data = pd.read_csv(file_path)
+    # Supprimer les colonnes inutiles
+    data = data.drop(['id', 'Unnamed: 32'], axis=1)
+    # Remplacer les valeurs manquantes par la moyenne de la colonne
+    data = data.fillna(data.mean())
+    # Convertir la colonne de classification en valeurs numériques
+    data['diagnosis'] = data['diagnosis'].map({'M': 1, 'B': 0})
+    # Séparer les données de classification des autres données
+    y = data['diagnosis']
+    X = data.drop('diagnosis', axis=1)
+    # Normaliser les données en utilisant la moyenne et l'écart-type
+    X = (X - X.mean()) / X.std()
+    return X, y
+def generate_statistics(X, y):
+    # Générer des statistiques sur les données
+    num_instances, num_features = X.shape
+    num_benign = np.sum(y == 0)
+    num_malignant = np.sum(y == 1)
+    print(f"Nombre total d\'instances : {num_instances}")
+    print(f'Nombre total de fonctionnalités : {num_features}')
+    print(f'Nombre de cas bénins : {num_benign}')
+    print(f'Nombre de cas malins : {num_malignant}')
+def generate_visualizations(X, y):
+    # Générer des graphiques pour visualiser les données
+    num_instances, num_features = X.shape
+    num_benign = np.sum(y == 0)
+    num_malignant = np.sum(y == 1)
+    fig, axs = plt.subplots(1, 2, figsize=(10, 5))
+    axs[0].pie([num_benign, num_malignant], labels=['Bénin', 'Malin'], autopct='%1.1f%%', startangle=90)
+    axs[0].axis('equal')
+    axs[0].set_title('Répartition des cas bénins et malins')
+    axs[1].scatter(X.iloc[:, 0], X.iloc[:, 1], c=y, cmap=plt.cm.coolwarm)
+    axs[1].set_xlabel('Radius Mean')
+    axs[1].set_ylabel('Texture Mean')
+    axs[1].set_title('Répartition des cas bénins et malins selon les fonctionnalités Radius Mean et Texture Mean')
+    plt.show()
 data_parser.py
 from bs4 import BeautifulSoup
 import pandas as pd
 def parse_data(raw_data):
     soup = BeautifulSoup(raw_data, 'html.parser')
-    # code to extract data from html using BeautifulSoup
-    # ...
-    # return data as a Pandas DataFrame
-    data = pd.DataFrame(...)
-    return data
+    # find all divs with class 'item'
+    items = soup.find_all('div', class_='item')
+    # create empty lists to store extracted data
+    titles = []
+    prices = []
+    descriptions = []
+    # iterate over items and extract data
+    for item in items:
+        title = item.find('h2').text.strip()
+        price = item.find('span', class_='price').text.strip()
+        description = item.find('p', class_='description').text.strip()
+        titles.append(title)
+        prices.append(price)
+        descriptions.append(description)
+    return pd.DataFrame(
+        {'title': titles, 'price': prices, 'description': descriptions}
+    )
 data_scraper.py
 from selenium import webdriver
 from time import sleep
 from scraper import get_html
 from data_parser import parse_data
+from scraper import get_html
+from bs4 import BeautifulSoup
+def get_auction_data():
+    # lire les urls à partir du fichier sites.url
+    with open('sites.txt', 'r') as f:
+        urls = f.readlines()
+    urls = [url.strip() for url in urls]  # supprimer les caractères de saut de ligne
+    # initialiser la liste pour stocker les données de toutes les enchères
+    auction_data = []
+    # boucle sur les urls et scraper les données
+    for url in urls:
+        data = get_html(url)
+        # extraire les données de l'enchère à partir du html
+        # ajouter les données à la liste d'enchères
+        auction_data.append(data)
+    return auction_data
 def scrape_data(url):
     # Set up Selenium webdriver
     options = webdriver.ChromeOptions()
@@ -1452,7 +1041,9 @@ from data_parser import parse_data
 from data_visualizer import create_dashboard
 from utils import save_data_to_file
 # Définition de l'URL pour scraper les données
-DATA_URL = 'https://example.com'
+# Lire l'URL à scraper à partir du fichier sites.txt
+with open('data\input\sites.txt', 'r') as file:
+    DATA_URL = file.readline().strip()
 # Définition de l'intervalle de mise à jour automatique (en heures)
 UPDATE_INTERVAL = 24
 # Initialisation des données
@@ -1480,12 +1071,80 @@ scheduler.add_job(update_data, 'interval', hours=UPDATE_INTERVAL)
 if __name__ == '__main__':
     scheduler.start()
 data_visualizer.py
+import pandas as pd
 import matplotlib.pyplot as plt
-def view_data(data):
-    # code to visualize data using Matplotlib
-    # ...
-    # show the plot
-    plt.show()
+import seaborn as sns
+import plotly.express as px
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
+def generate_charts(data):
+    """
+    Génère des graphiques à partir des données.
+    :param data: Le DataFrame contenant les données à visualiser.
+    :return: None
+    """
+    # Générer un histogramme pour visualiser la distribution des montants
+    plt.figure(figsize=(8, 6))
+    sns.histplot(data=data, x='Amount', kde=True, bins=20)
+    plt.title('Distribution des montants')
+    plt.savefig('montants.png', dpi=300)
+    plt.close()
+    # Générer un graphique à barres pour visualiser le nombre de transactions par type de carte
+    plt.figure(figsize=(8, 6))
+    sns.countplot(data=data, x='Card Type')
+    plt.title('Nombre de transactions par type de carte')
+    plt.savefig('type_de_carte.png', dpi=300)
+    plt.close()
+    # Générer un diagramme circulaire pour visualiser la répartition des transactions par pays
+    data_by_country = data.groupby(['Country'])['Amount'].sum().reset_index()
+    data_by_country = data_by_country.sort_values(by='Amount', ascending=False).head(10)
+    fig = px.pie(data_by_country, values='Amount', names='Country')
+    fig.update_traces(textposition='inside', textinfo='percent+label')
+    fig.update_layout(title='Répartition des transactions par pays (Top 10)')
+    fig.write_image('transactions_par_pays.png', engine='kaleido')
+    plt.close()
+def generate_dashboards(data):
+    """
+    Génère des tableaux de bord interactifs à partir des données.
+    :param data: Le DataFrame contenant les données à visualiser.
+    :return: L'objet Dash qui contient les tableaux de bord.
+    """
+    # Créer l'application Dash
+    app = dash.Dash(__name__)
+    # Créer une mise en page simple
+    app.layout = html.Div([
+        html.H1('Visualisation des données de transactions'),
+        dcc.Graph(
+            id='montants-histogram',
+            figure={
+                'data': [{
+                    'x': data['Amount'],
+                    'type': 'histogram'
+                }],
+                'layout': {
+                    'title': 'Distribution des montants'
+                }
+            }
+        ),
+        dcc.Graph(
+            id='type-de-carte-bar',
+            figure={
+                'data': [{
+                    'x': data['Card Type'],
+                    'type': 'histogram'
+                }],
+                'layout': {
+                    'title': 'Nombre de transactions par type de carte'
+                }
+            }
+        ),
+        dcc.Graph(
+            id='transactions-par-pays-pie',
+            figure=px.pie(data.groupby(['Country'])['Amount'].sum().reset_index().sort_values(by='Amount', ascending=False).head(10), values='Amount', names='Country', title='Répartition des transactions par pays (Top 10)')
+        )
+    ])
+    return app
 deployment.py
 mkdir my_app && cd my_app && touch scraper.py stats.py views.py utils.py main.py data_scraper.py data_parser.py data_analyzer.py data_visualizer.py data_updater.py dashboard.py sites.txt && echo -e "import pandas as pd\nimport requests\nimport json\nimport time\nimport selenium.webdriver as webdriver\nfrom bs4 import BeautifulSoup\nfrom utils import check_package, save_data\n\nif check_package('anticaptchaofficial'):\n import anticaptchaofficial\n\n\ndef scrape_data(url):\n driver = webdriver.Chrome()\n if 'google.com/recaptcha/' in url:\n captcha_text = solve_captcha(driver)\n html = get_html(url, captcha_text)\n else:\n html = get_html(url)\n data = parse_html(html)\n driver.quit()\n return data\n\n\ndef get_html(url, captcha_text=None):\n headers = {\n 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36',\n 'Referer': url\n }\n if captcha_text:\n cookies = requests.get('https://2captcha.com/in.php?key=' + api_key + '&method=userrecaptcha&googlekey=' + site_key + '&pageurl=' + url).text\n captcha_id = cookies.split('|')[1]\n captcha_answer = requests.get('https://2captcha.com/res.php?key=' + api_key + '&action=get&id=' + captcha_id).text\n while 'CAPCHA_NOT_READY' in captcha_answer:\n time.sleep(5)\n captcha_answer = requests.get('https://2captcha.com/res.php?key=' + api_key + '&action=get&id=' + captcha_id).text\n captcha_token = captcha_answer.split('|')[1]\n r = requests.get(url + '&g-recaptcha-response=' + captcha_token, headers=headers, cookies={'2Captcha': captcha_id})\n return r.text\n else:\n r = requests.get(url, headers=headers)\n return r.text\n\n\ndef parse_html(html):\n soup = BeautifulSoup(html, 'html.parser')\n table = soup.find('table')\n rows = table.find_all('tr')\n data = []\n for row in rows:\n cols = row.find_all('td')\n cols = [ele.text.strip() for ele in cols]\n data.append([ele for ele in cols if ele])\n df = pd.DataFrame(data[1:], columns=data[0])\n return df\n\n\ndef solve_captcha(driver):\n task = anticaptchaofficial.ImageToTextTask(image_url=get_image_path(driver), **{'clientKey': api_key})\n captcha_text = task.solve()\n return captcha_text\n\n\ndef get_image_path(driver):\n driver.get('https://www.google.com/recaptcha/api2/demo')\n frame = driver.find_element_by_xpath('//iframe[contains(@src, "recaptcha")]')\n driver.switch_to.frame(frame)\n image_element = driver.find_element_by_xpath('//img[contains(@src, "google.com/recaptcha/api2/p")]')\n image_url = image_element.get_attribute('src')\n return image_url\n\n" > scraper.py && echo -e "import pandas as pd\n\ndef analyze_data(data):\n return calculate
 && echo -e "import pandas as pd\n\ndef analyze_data(data):\n return calculate_statistics(data)\n\n\ndef calculate_statistics(data):\n # Perform analysis and return results\n pass\n" > stats.py && echo -e "import pandas as pd\n\ndef view_data(data):\n # Visualize data\n pass\n" > views.py && echo -e "import pandas as pd\nimport os\n\ndef check_package(package_name):\n try:\n __import__(package_name)\n except ImportError:\n return False\n return True\n\ndef save_data(data, filename):\n path = os.path.join(os.getcwd(), filename)\n data.to_csv(path, index=False)\n" > utils.py && echo -e "from scraper import scrape_data\nfrom data_parser import parse_html\nfrom utils import save_data\n\n# Scraping data\nurl = 'https://www.example.com'\ndata = scrape_data(url)\n\n# Parsing data\nparsed_data = parse_html(data)\n\n# Saving data to CSV file\ndata_filename = 'data.csv'\nsave_data(parsed_data, data_filename)\n" > main.py && echo -e "from scraper import scrape_data\nfrom data_parser import parse_html\nfrom data_analyzer import analyze_data\nfrom data_visualizer import view_data\nfrom data_updater import update_data\nfrom utils import save_data\n\n# Scraping data\nurl = 'https://www.example.com'\ndata = scrape_data(url)\n\n# Parsing data\nparsed_data = parse_html(data)\n\n# Analyzing data\ndata_stats = analyze_data(parsed_data)\n\n# Visualizing data\nview_data(data_stats)\n" > dashboard.py && echo -e "https://www.example.com" > sites.txt 
@@ -1515,8 +1174,7 @@ class AddForm(Form):
     description = TextAreaField('Description', validators=[InputRequired()])
     image = StringField('Image URL', validators=[InputRequired()])
 class DeleteForm(Form):
-    entries = None
-install_package.py
+    entries = Noneinstall_package.py
 import pip
 # Modules nécessaires à l'application
 required_modules = ['beautifulsoup4', 'fake_useragent', 'matplotlib', 'numpy', 'pandas', 'plotly', 'requests', 'selenium', 'tqdm']
@@ -1533,10 +1191,10 @@ def install_missing_packages():
         print('Tous les packages nécessaires sont déjà installés.')
 main.py
 from flask import Flask, render_template
-from config import Config , DATA_FILE
+from config import DATA_FILE
 from models import Data
 from views import home, data, stats, update
-from utils import install_missing_packages
+from install_package import install_missing_packages
 from data_scraper import get_auction_data
 from data_analyzer import process_data
 from data_visualizer import generate_charts, generate_dashboards
@@ -1546,11 +1204,19 @@ from utils import add_entry_to_excel, delete_entry_from_excel, get_entry_by_id
 from forms import AddForm, DeleteForm
 import pandas as pd
 from flask import render_template, request, redirect, url_for
-from app import app
+import logging
+# Configuration du logger
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+# Exemple d'utilisation
+logging.debug('Un message de debug')
+logging.info('Un message d\'info')
+logging.warning('Un message d\'avertissement')
+logging.error('Un message d\'erreur')
+logging.critical('Un message critique')
 app = Flask(__name__)
 app.config.from_pyfile('config.py')
 def load_data_from_excel():
-    df = pd.read_excel(app.config['DATA_FILE'])
+    df = pd.read_excel(app.config[DATA_FILE])
     return df.to_dict(orient='records')
 @app.route('/')
 def index():
@@ -1566,7 +1232,7 @@ def add():
             'description': form.description.data,
             'image': form.image.data
         }
-        add_entry_to_excel(data, app.config['DATA_FILE'])
+        add_entry_to_excel(data, app.config[DATA_FILE])
         return redirect(url_for('index'))
     return render_template('add.html', form=form)
 @app.route('/delete', methods=['GET', 'POST'])
@@ -1575,7 +1241,7 @@ def delete():
     form.entries.choices = [(entry['id'], entry['name']) for entry in load_data_from_excel()]
     if request.method == 'POST' and form.validate():
         entry_id = form.entries.data
-        delete_entry_from_excel(entry_id, app.config['DATA_FILE'])
+        delete_entry_from_excel(entry_id, app.config[DATA_FILE])
         return redirect(url_for('index'))
     return render_template('delete.html', form=form)
 @app.route('/entry/<int:entry_id>')
@@ -1673,85 +1339,97 @@ class Data:
         stats = self.df[column].describe()
         return stats
 scraper.py
-import os
-import sys
-import time
-from config import config
-import random
-import data_parser
-import requests
-from bs4 import BeautifulSoup
-from stem import Signal
-from stem.control import Controller
-from fake_useragent import UserAgent
-from selenium.webdriver.chrome.options import Options
-from selenium import webdriver
 import pandas as pd
-from python_anticaptcha import AnticaptchaClient, ImageToTextTask
-options = Options()
-options.headless = True
-options.add_argument("--window-size=1920,1200")
-driver = webdriver.Chrome(options=options, executable_path='chromedriver')
-# Anti-captcha settings
-api_key = 'your-key-here'
-client = AnticaptchaClient(api_key)
-solver = ImageToTextTask(client)
-def scrape_data(url, min_sleep=1, max_sleep=5):
-    # set headers
-    ua = UserAgent()
-    headers = {'User-Agent': ua.random}
-    # create session
-    session = requests.Session()
-    session.headers.update(headers)
-    # get captcha image url
-    response = session.get(url)
-    soup = BeautifulSoup(response.content, 'html.parser')
-    captcha_url = soup.find('img', {'id': 'captcha_image'}).get('src')
-    # solve captcha with anti-captcha
-    captcha_response = solver.captcha_handler(captcha_url)
-    time.sleep(random.uniform(min_sleep, max_sleep))
-    # submit form with captcha response
-    data = {'captcha': captcha_response}
-    response = session.post(url, data=data)
-    time.sleep(random.uniform(min_sleep, max_sleep))
-    # parse html
-    soup = BeautifulSoup(response.content, 'html.parser')
-    data = parse_html(str(soup))
+import requests
+import json
+import time
+import selenium.webdriver as webdriver
+from bs4 import BeautifulSoup
+from utils import check_package, save_data
+if check_package('anticaptchaofficial'):
+    import anticaptchaofficial
+def scrape_data(url):
+    driver = webdriver.Chrome()
+    if 'google.com/recaptcha/' in url:
+        captcha_text = solve_captcha(driver)
+        html = get_html(url, captcha_text=captcha_text)
+    else:
+        html = get_html(url)
+    data = parse_html(html)
+    driver.quit()
     return data
-# rotate Tor identity
-def renew_tor_identity():
-    with Controller.from_port(port=9051) as controller:
-        controller.authenticate(password='your-password-here')
-        controller.signal(Signal.NEWNYM)
-def set_tor_proxy():
-    socks_proxy = "socks5h://localhost:9050"
-    capabilities = webdriver.DesiredCapabilities.CHROME.copy()
-    capabilities['proxy'] = {
-        "proxyType": "MANUAL",
-        "socksProxy": socks_proxy
+def get_html(url, captcha_text=None):
+    headers = {
+        'User-Agent': 'Mozilla/5.0 AppleWebKit/537.36 Chrome/58.0.3029.110 Safari/537.36',
+        'Referer': url
     }
-    driver = webdriver.Chrome(options=options, desired_capabilities=capabilities, executable_path='chromedriver')
-    return driver
-# Step 1: Get list of URLs to scrape
-def get_urls():
-    urls = []
-    for page in range(1, 6):
-        url = f'https://example.com/page-{page}'
-        urls.append(url)
-    return urls
-def main():
-    # configure Tor proxy
-    driver = set_tor_proxy()
-    # get list of URLs to scrape
-    URLS = get_urls()
-    # loop over URLs to scrape
-    for url in URLS:
-        # scrape data
-        data = scrape_data(url, MIN_SLEEP, MAX_SLEEP)
-        # save data to file using Pandas
-        COLUMNS = ['Title', 'Author', 'Date', 'Content']
-        df = pd.DataFrame(data, columns=COLUMNS)
-        df.to_csv('data.csv', index=False, mode='a', header=False)
+    if captcha_text:
+        cookies = requests.get(url).text
+        captcha_id = cookies.split(';')[1]
+        captcha_answer = requests.get(f'http://api.anti-captcha.com/getTaskResult?taskId={captcha_id}&retry=0').text
+        while 'CAPCHA_NOT_READY' in captcha_answer:
+            time.sleep(5)
+            captcha_answer = requests.get(f'http://api.anti-captcha.com/getTaskResult?taskId={captcha_id}&retry=0').text
+        captcha_token = captcha_answer.split(':')[1].replace('"', '').replace('}', '')
+        r = requests.get(f'{url}&g-recaptcha-response={captcha_token}', headers=headers)
+        return r.text
+    else:
+        r = requests.get(url, headers=headers)
+        return r.text
+def parse_html(html):
+    soup = BeautifulSoup(html, 'html.parser')
+    table = soup.find('table')
+    rows = table.find_all('tr')
+    data = []
+    for row in rows:
+        cols = row.find_all('td')
+        cols = [ele.text.strip() for ele in cols]
+        data.append(cols)
+    df = pd.DataFrame(data, columns=['Auction Name', 'Auction ID', 'Start Time', 'End Time', 'Current Bid', 'Location', 'Link'])
+    return df
+def solve_captcha(driver):
+    task = anticaptchaofficial.ImageToTextTask(image_url=get_image_path(driver))
+    captcha_text = task.solve()
+    return captcha_text
+def get_image_path(driver):
+    driver.get('https://www.google.com/recaptcha/api2/demo')
+    frame = driver.find_element_by_xpath('//iframe[contains(@src, "recaptcha")]')
+    driver.switch_to.frame(frame)
+    image_element = driver.find_element_by_xpath('//img[contains(@src, "data:image")]')
+    image_url = image_element.get_attribute('src')
+    return image_urlsonde.py
+import time
+import pandas as pd
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+# Configuration de Selenium
+chrome_options = Options()
+chrome_options.add_argument('--headless')
+driver_service = Service('./chromedriver')
+driver = webdriver.Chrome(service=driver_service, options=chrome_options)
+# Récupération de la page de recherche de lots
+url = 'https://www.interencheres.com/recherche/lots'
+driver.get(url)
+# Recherche de termes liés aux lots aux enchères
+search_input = driver.find_element(By.CSS_SELECTOR, 'input-71')
+search_input.send_keys('informatique')
+search_input.send_keys(Keys.RETURN)
+# Attendre que la page se charge complètement
+time.sleep(5)
+# Récupération des résultats de la recherche
+lots = []
+links = driver.find_elements(By.CSS_SELECTOR, 'sale-item')
+for link in links:
+    lot = {'title': link.text, 'url': link.get_attribute('href')}
+    lots.append(lot)
+# Stocker les résultats dans un fichier Excel
+df = pd.DataFrame(lots)
+df.to_excel('lots_encheres.xlsx', index=False)
+# Fermer le navigateur
+driver.quit()
 test_scraper.py
 import unittest
 from unittest.mock import MagicMock, patch
@@ -1842,383 +1520,19 @@ def get_user(username, users_file):
             user_info = line.strip().split(",")
             if user_info[0] == username:
                 return {"username": user_info[0], "password": user_info[1]}
-    return None
-views.py
-import pandas as pd  
-def view_data(data):  # Visualize data  pass 
-    return
-
-=== articles.py ===
-
-from flask import Flask, render_template, request, jsonify
-from flask_cors import CORS
+    return Noneviews.py
 import pandas as pd
-import numpy as np
-import joblib
-import os
-def create_article(article_data, articles_file):
-    """
-    Crée un article en ajoutant les informations passées en paramètre dans le fichier `articles_file`.
-    """
-    with open(articles_file, "a") as file:
-        file.write(",".join(article_data) + "\n")
-def get_articles(articles_file):
-    """
-    Récupère tous les articles stockés dans le fichier `articles_file`.
-    Retourne une liste d'articles, chaque article étant représenté par un dictionnaire contenant son titre et son contenu.
-    """
-    articles = []
-    with open(articles_file, "r") as file:
-        for line in file:
-            article_info = line.strip().split(",")
-            articles.append({"title": article_info[0], "content": article_info[1]})
-    return articles
-def get_prediction(title, content, model):
-    """
-    Utilise le modèle de prédiction passé en paramètre pour faire une prédiction sur l'article avec le titre et le contenu passés en paramètre.
-    Retourne le label de la prédiction.
-    """
-    article_text = f"{title} {content}"
-    prediction = model.predict([article_text])[0]
-    return prediction
-from flask import Flask, render_template, request, jsonify
-from flask_cors import CORS
-import pandas as pd
-import numpy as np
-import joblib
-import os
-def create_app():
-    app = Flask(__name__)
-    CORS(app)
-    # Charger le modèle entraîné
-    model = joblib.load(os.path.join("model", "model.joblib"))
-    # Charger le vecteuriseur de texte
-    vectorizer = joblib.load(os.path.join("model", "vectorizer.joblib"))
-    @app.route('/')
-    def index():
-        return render_template('index.html')
-    @app.route('/predict', methods=['POST'])
-    def predict():
-        # Récupérer les données du formulaire
-        data = request.form['data']
-        # Prétraitement du texte
-        data = data.lower()
-        data = [data]
-        data = vectorizer.transform(data).toarray()
-        # Faire la prédiction
-        prediction = model.predict(data)
-        # Renvoyer la réponse en format JSON
-        return jsonify({'result': int(prediction[0])})
-    @app.route('/predict_file', methods=['POST'])
-    def predict_file():
-        # Récupérer le fichier de données
-        data = pd.read_excel(request.files.get('file'))
-        # Prétraitement du texte
-        data = data['description'].apply(lambda x: x.lower())
-        data = vectorizer.transform(data).toarray()
-        # Faire la prédiction
-        prediction = model.predict(data)
-        # Ajouter la colonne de prédictions au DataFrame original
-        data['category'] = prediction
-        # Convertir le DataFrame en dictionnaire
-        data_dict = data.to_dict(orient='records')
-        # Renvoyer la réponse en format JSON
-        return jsonify({'result': data_dict})
-    return app
-
-=== backup.py ===
-
-import os
-import pandas as pd
-from datetime import datetime
-import openpyxl
-# Définition du dossier de sauvegarde
-BACKUP_DIR = '/path/to/backup/folder/'
-def backup_data(data):
-    """
-    Sauvegarde les données dans un fichier Excel dans un dossier de sauvegarde.
-    Le nom du fichier est généré en fonction de la date et de l'heure courante.
-    """
-    # Générer le nom de fichier basé sur la date et l'heure actuelles
-    filename = 'data_backup_{}.xlsx'.format(datetime.now().strftime('%Y%m%d_%H%M%S'))
-    # Créer un DataFrame Pandas à partir des données
-    df = pd.DataFrame(data)
-    # Sauvegarder les données dans un fichier Excel
-    backup_path = os.path.join(BACKUP_DIR, filename)
-    writer = pd.ExcelWriter(backup_path, engine='openpyxl')
-    try:
-        writer.book = openpyxl.load_workbook(backup_path)
-        writer.sheets = {ws.title: ws for ws in writer.book.worksheets}
-    except FileNotFoundError:
-        pass
-    df.to_excel(writer, index=False, sheet_name='data')
-    writer.save()
-
-=== config.py ===
-
-import os
-from dotenv import load_dotenv
-load_dotenv()
-class Config:
-    # Flask settings
-    SECRET_KEY = os.environ.get('SECRET_KEY')
-    DEBUG = os.environ.get('DEBUG', False)
-    # Data settings
-    # Ajouter une variable DATA_FILE pour stocker le chemin vers le fichier Excel.
-    DATA_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data.xlsx')
-    BACKUP_FOLDER = os.environ.get('BACKUP_FOLDER', '/path/to/backup/folder/')
-    BACKUP_INTERVAL = os.environ.get('BACKUP_INTERVAL', 24)
-    MIN_SLEEP = os.environ.get('MIN_SLEEP', 1)
-    MAX_SLEEP = os.environ.get('MAX_SLEEP', 5)
-    # Scraper settings
-    API_KEY = os.environ.get('API_KEY', 'your_api_key_here')
-    # Database settings
-    DB_HOST = os.environ.get('DB_HOST', 'localhost')
-    DB_PORT = os.environ.get('DB_PORT', '5432')
-    DB_NAME = os.environ.get('DB_NAME', 'mydatabase')
-    DB_USER = os.environ.get('DB_USER', 'mydatabaseuser')
-    DB_PASSWORD = os.environ.get('DB_PASSWORD', 'mypassword')
-
-=== dashboard.py ===
-
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import dash
-import dash_core_components as dcc
-import dash_html_components as html
-import plotly.graph_objs as go
-def create_dashboard(data):
-    """Crée un dashboard à partir des données passées en paramètre."""
-    app = dash.Dash(__name__)
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=data['date'], y=data['price'], mode='lines+markers', name='Prix'))
-    app.layout = html.Div(children=[
-        html.H1(children='Dashboard'),
-        html.Div(children='''
-            Evolution du prix dans le temps
-        '''),
-        dcc.Graph(
-            id='graph',
-            figure=fig
-        )
-    ])
-    app.run_server(debug=True)
-
-=== data_analyzer.py ===
-
-import pandas as pd
-def analyze_data(data, calculate_statistics):
-    stats = calculate_statistics(data)
-    # code to analyze data and calculate statistics using Pandas
-    # ...
-    # return statistics as a Pandas DataFrame
-    stats_df = pd.DataFrame(...)
-    return stats_df
-def calculate_statistics(data):
-    # code to calculate statistics using Pandas
-    # ...
-    # return statistics as a Pandas DataFrame
-    stats_df = pd.DataFrame(...)
-    return stats_df
-
-=== data_parser.py ===
-
-from bs4 import BeautifulSoup
-import pandas as pd
-def parse_data(raw_data):
-    soup = BeautifulSoup(raw_data, 'html.parser')
-    # code to extract data from html using BeautifulSoup
-    # ...
-    # return data as a Pandas DataFrame
-    data = pd.DataFrame(...)
-    return data
-
-=== data_scraper.py ===
-
-from selenium import webdriver
-from time import sleep
-from scraper import get_html
-from data_parser import parse_data
-def scrape_data(url):
-    # Set up Selenium webdriver
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless')
-    options.add_argument('--disable-gpu')
-    driver = webdriver.Chrome(options=options)
-    driver.get(url)
-    # Wait for page to load
-    sleep(5)
-    # Get page source
-    html = driver.page_source
-    # Close Selenium webdriver
-    driver.quit()
-    # Parse data
-    parsed_data = parse_data(html)
-    return parsed_data
-
-=== data_updater.py ===
-
-import pandas as pd
-from apscheduler.schedulers.blocking import BlockingScheduler
-from data_scraper import scrape_data
-from data_parser import parse_data
-from data_visualizer import create_dashboard
-from utils import save_data_to_file
-# Définition de l'URL pour scraper les données
-DATA_URL = 'https://example.com'
-# Définition de l'intervalle de mise à jour automatique (en heures)
-UPDATE_INTERVAL = 24
-# Initialisation des données
-data = pd.DataFrame()
-def update_data():
-    global data
-    # Scraper les données
-    html_data = scrape_data(DATA_URL)
-    # Parser les données
-    parsed_data = parse_data(html_data)
-    # Vérifier si de nouvelles données ont été récupérées
-    if not parsed_data.empty and not parsed_data.equals(data):
-        # Mettre à jour les données
-        data = parsed_data
-        # Créer un dashboard
-        create_dashboard(data)
-        # Sauvegarder les données
-        save_data_to_file(data, 'data.csv')
-        print('Data updated successfully')
-    else:
-        print('No new data available')
-# Planification de la mise à jour automatique
-scheduler = BlockingScheduler()
-scheduler.add_job(update_data, 'interval', hours=UPDATE_INTERVAL)
-if __name__ == '__main__':
-    scheduler.start()
-
-=== data_visualizer.py ===
-
-import matplotlib.pyplot as plt
-def view_data(data):
-    # code to visualize data using Matplotlib
-    # ...
-    # show the plot
-    plt.show()
-
-=== test_scraper.py ===
-
-import unittest
-from unittest.mock import MagicMock, patch
-from app.data_scraper import scrape_data
-class TestDataScraper(unittest.TestCase):
-    def setUp(self):
-        self.url = 'https://example.com'
-    @patch('app.data_scraper.requests.Session')
-    @patch('app.data_scraper.ImageToTextTask')
-    @patch('app.data_scraper.parse_html')
-    def test_scrape_data(self, mock_parse_html, mock_ImageToTextTask, mock_Session):
-        # Mock response object
-        response = MagicMock()
-        response.content = b'<html><body>test</body></html>'
-        response.status_code = 200
-        # Mock captcha image url
-        mock_soup = MagicMock()
-        mock_soup.find.return_value.get.return_value = 'captcha_url'
-        mock_Session.return_value.get.return_value = response
-        mock_Session.return_value.headers = {}
-        mock_Session.return_value.headers.update.return_value = None
-        mock_parse_html.return_value = {'Title': 'Test', 'Author': 'John Doe', 'Date': '2022-02-23', 'Content': 'Test content'}
-        # Mock captcha response
-        mock_solver = MagicMock()
-        mock_ImageToTextTask.return_value = mock_solver
-        mock_solver.captcha_handler.return_value = 'captcha_response'
-        # Call function
-        data = scrape_data(self.url)
-        # Assertions
-        mock_Session.assert_called_once()
-        mock_Session.return_value.get.assert_called_once_with(self.url)
-        mock_soup.find.assert_called_once_with('img', {'id': 'captcha_image'})
-        mock_solver.captcha_handler.assert_called_once_with('captcha_url')
-        mock_parse_html.assert_called_once_with('<html><body>test</body></html>')
-        self.assertEqual(data, {'Title': 'Test', 'Author': 'John Doe', 'Date': '2022-02-23', 'Content': 'Test content'})
-
-=== utils.py ===
-
-import pandas as pd
-import openpyxl
-from config import DATA_FILE
-...
-def add_entry_to_excel(entry):
-    wb = openpyxl.load_workbook(DATA_FILE)
-    sheet = wb.active
-    sheet.append([entry['name'], entry['description'], entry['price']])
-    wb.save(DATA_FILE)
-def delete_entry_from_excel(entry):
-    wb = openpyxl.load_workbook(DATA_FILE)
-    sheet = wb.active
-    for row in sheet.iter_rows(values_only=True):
-        if row[0] == entry['name'] and row[1] == entry['description'] and row[2] == entry['price']:
-            sheet.delete_rows(row[0].row)
-            break
-    wb.save(DATA_FILE)
-def get_entry_by_id(id):
-    wb = openpyxl.load_workbook(DATA_FILE)
-    sheet = wb.active
-    for row in sheet.iter_rows(min_row=2, values_only=True):
-        if row[0] == id:
-            return {'name': row[1], 'description': row[2], 'price': row[3]}
-    return None
-import pandas as pd
-def add_entry_to_excel(data, file_path):
-    df = pd.read_excel(file_path)
-    df = df.append(data, ignore_index=True)
-    df.to_excel(file_path, index=False)
-def delete_entry_from_excel(entry_id, file_path):
-    df = pd.read_excel(file_path)
-    df = df[df['id'] != entry_id]
-    df.to_excel(file_path, index=False)
-def get_entry_by_id(entry_id, file_path):
-    df = pd.read_excel(file_path)
-    entry = df.loc[df['id'] == entry_id].to_dict(orient='records')
-    return entry[0] if entry else None
-
-=== utilsateurs.py ===
-
-def create_user(user_data, users_file):
-    """
-    Crée un utilisateur en ajoutant les informations passées en paramètre dans le fichier `users_file`.
-    """
-    with open(users_file, "a") as file:
-        file.write(",".join(user_data) + "\n")
-def get_user(username, users_file):
-    """
-    Récupère les informations de l'utilisateur correspondant au nom d'utilisateur `username` dans le fichier `users_file`.
-    Retourne un dictionnaire avec les informations de l'utilisateur ou None si l'utilisateur n'existe pas.
-    """
-    with open(users_file, "r") as file:
-        for line in file:
-            user_info = line.strip().split(",")
-            if user_info[0] == username:
-                return {"username": user_info[0], "password": user_info[1]}
-    return None
-
-=== views.py ===
-
-import pandas as pd  
-def view_data(data):  # Visualize data  pass 
-    return
-
-=== add.html ===
-
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-    <title>Ajouter une entrée</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  </head>
-  <body>
-    <h1>Ajouter une entrée</h1>
-    <form method="POST" action="{{ url_for('add') }}">
-      <!-- Ajouter les champs du formulaire pour ajouter une entrée -->
-    </form>
-  </body>
-</html>
+from flask import Blueprint, render_template
+views_bp = Blueprint('views_bp', __name__)
+@views_bp.route('/')
+def home():
+    return render_template('home.html', title='Home')
+@views_bp.route('/data')
+def data():
+    return render_template('data.html', title='Data')
+@views_bp.route('/stats')
+def stats():
+    return render_template('stats.html', title='Stats')
+@views_bp.route('/update')
+def update():
+    return render_template('update.html', title='Update')

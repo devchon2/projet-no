@@ -1,120 +1,55 @@
 import pandas as pd
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
 from apscheduler.schedulers.blocking import BlockingScheduler
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
-from data_scraper import scrape_data
-#DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
+from data_scraper import scrape_data,get_auction_data
 from data_parser import parse_data
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
 from data_visualizer import create_dashboard
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
+from utils import save_data
+import logging
+from config import DATA_FILE
+from scraper import get_html
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
-from utils import save_data_to_file
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
-
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
 
 # Définition de l'URL pour scraper les données
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
-DATA_URL = 'https://example.com'
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
-
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
+# Lire l'URL à scraper à partir du fichier sites.txt
+with open('data\input\sites.txt', 'r') as file:
+    DATA_URL = file.readline().strip()
 
 # Définition de l'intervalle de mise à jour automatique (en heures)
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
 UPDATE_INTERVAL = 24
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
-
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
 
 # Initialisation des données
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
 data = pd.DataFrame()
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
-
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
 
 def update_data():
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
+    # Get auction data from scraper
+    auction_data = get_auction_data()
 
-    global data
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
+    # Loop through auction data and scrape individual auction pages
+    for data in auction_data:
+        # Get HTML for auction page
+        html_data = get_html(data['url'])
 
-    # Scraper les données
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
+        # Skip to next iteration if html_data is None
+        if html_data is None:
+            print("Pas de donnée!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            continue
 
-    html_data = scrape_data(DATA_URL)
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
+        # Parse HTML data for auction
+        parsed_data = parse_data(html_data)
+        print(parsed_data)
+        # Update auction data with parsed data
+        data.update(parsed_data)
 
-    # Parser les données
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
-    parsed_data = parse_data(html_data)
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
-    # Vérifier si de nouvelles données ont été récupérées
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
-    if not parsed_data.empty and not parsed_data.equals(data):
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
-        # Mettre à jour les données
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
-        data = parsed_data
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
-        # Créer un dashboard
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
-        create_dashboard(data)
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
-        # Sauvegarder les données
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
-        save_data_to_file(data, 'data.csv')
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
-        print('Data updated successfully')
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
-    else:
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
-        print('No new data available')
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
+        # Output data to console
+        print(data)
 
 
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
 
 # Planification de la mise à jour automatique
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
 scheduler = BlockingScheduler()
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
 scheduler.add_job(update_data, 'interval', hours=UPDATE_INTERVAL)
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
-
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
 
 if __name__ == '__main__':
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-
+    logging.info('Starting the data updater...')
     scheduler.start()
-# DEBUG J:\Synochro\DEV\Projets perso\projet no\projet-no\data_updater.py: ligne 
-

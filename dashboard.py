@@ -5,6 +5,11 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objs as go
+import logging
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
+
 
 def create_dashboard(data):
     """Crée un dashboard à partir des données passées en paramètre."""
